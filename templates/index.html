@@ -16,69 +16,32 @@
         <!-- Header -->
         <header class="header">
             <h1 class="glitch-text" data-text="CODEX TEAM">CODEX TEAM</h1>
-            <p class="subtitle">Advanced Hacker Tools & API Solutions</p>
+            <p class="subtitle">Advanced Hacker Tools & Bots Solutions</p>
         </header>
 
         <!-- Navigation -->
         <nav class="nav-bar">
-            <a href="#bio-tool" class="nav-link">Bio Update</a>
-            <a href="#item-tool" class="nav-link">Item Injector</a>
-            <a href="#api-tools" class="nav-link">API Tools</a>
-            <a href="#team" class="nav-link">Team</a>
+            <a href="#bio-tool" class="nav-link">CREAT BOT</a>
+            <a href="#item-tool" class="nav-link">CODEX TEAM </a>
+            <a href="#api-tools" class="nav-link">PANEL DEV:</a>
+            <a href="#team" class="nav-link">BNGX</a>
         </nav>
 
         <!-- Bio Update Section -->
         <section id="bio-tool" class="tool-section">
-            <h2 class="section-title">Bio Update Tool</h2>
+            <h2 class="section-title">Creat Bot Tool</h2>
             <div class="tool-container">
                 <!-- Token Verification -->
                 <div class="input-group">
-                    <label for="bio-token">Access Token</label>
-                    <input type="password" id="bio-token" placeholder="Enter your access token..." class="input-field">
-                    <button id="verify-bio-token" class="btn btn-verify">Verify Token</button>
+                    <label for="bio-token">BOT NAME</label>
+                    <input type="text" id="bot-name" placeholder="Enter your bot name..." class="input-field">
+                    <button id="verify-your-bot" class="btn btn-verify">CREAT ACC</button>
                 </div>
-                <div id="bio-token-status" class="status-message"></div>
-
-                <!-- Bio Input -->
-                <div class="input-group" id="bio-input-group" style="display: none;">
-                    <label for="new-bio">New Bio Content</label>
-                    <textarea id="new-bio" rows="4" placeholder="Enter your new bio..." class="textarea-field"></textarea>
-                    <button id="update-bio" class="btn btn-primary">Update Bio</button>
-                </div>
+                <div id="bot name-status" class="status-message"></div>
             </div>
         </section>
 
         <!-- Item Injection Section -->
-        <section id="item-tool" class="tool-section">
-            <h2 class="section-title">Free Fire Item Injector</h2>
-            <div class="tool-container">
-                <!-- Token Verification -->
-                <div class="input-group">
-                    <label for="item-token">Access Token</label>
-                    <input type="password" id="item-token" placeholder="Enter access token for item injection..." class="input-field">
-                    <button id="verify-item-token" class="btn btn-verify">Authenticate</button>
-                </div>
-                <div id="item-token-status" class="status-message"></div>
-
-                <!-- Item Configuration -->
-                <div class="input-group" id="item-input-group" style="display: none;">
-                    <div class="input-row">
-                        <div class="input-col">
-                            <label for="item-id">Item ID</label>
-                            <input type="text" id="item-id" placeholder="Enter item ID..." class="input-field">
-                        </div>
-                        <div class="input-col">
-                            <label for="quantity">Quantity</label>
-                            <input type="number" id="quantity" value="1" min="1" class="input-field">
-                        </div>
-                    </div>
-                    <div class="api-status">
-                        <p>🔧 API endpoint configuration pending - Contact admin</p>
-                    </div>
-                    <button id="inject-items" class="btn btn-primary">Inject Items</button>
-                </div>
-            </div>
-        </section>
 
         <!-- API Tools Section -->
         <section id="api-tools" class="tool-section">
@@ -87,55 +50,22 @@
                 <div class="api-card">
                     <div class="api-header">
                         <i class="fas fa-user-edit"></i>
-                        <h3>User Info Scanner</h3>
+                        <h3>ADD FRIEND</h3>
                     </div>
                     <div class="input-group">
                         <input type="text" id="user-id" placeholder="Enter User ID..." class="input-field">
-                        <button id="get-user-info" class="btn btn-api">Scan User</button>
+                        <button id="adding friend" class="btn btn-api">add friend</button>
                     </div>
                 </div>
 
                 <div class="api-card">
                     <div class="api-header">
                         <i class="fas fa-user-friends"></i>
-                        <h3>Friend Spammer</h3>
+                        <h3>REMOVE FRIEND</h3>
                     </div>
                     <div class="input-group">
                         <input type="text" id="friend-player-id" placeholder="Enter Player ID..." class="input-field">
-                        <button id="send-friend" class="btn btn-api">Send Friend Request</button>
-                    </div>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-header">
-                        <i class="fas fa-image"></i>
-                        <h3>Banner Controller</h3>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="banner-uid" placeholder="Enter User ID..." class="input-field">
-                        <button id="get-banner" class="btn btn-api">Get Banner</button>
-                    </div>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-header">
-                        <i class="fas fa-heart"></i>
-                        <h3>Like Bomber</h3>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="like-player-id" placeholder="Enter Player ID..." class="input-field">
-                        <button id="send-likes" class="btn btn-api">Send Likes</button>
-                    </div>
-                </div>
-
-                <div class="api-card">
-                    <div class="api-header">
-                        <i class="fas fa-tshirt"></i>
-                        <h3>Outfit Injector</h3>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="outfit-uid" placeholder="Enter User ID..." class="input-field">
-                        <button id="get-outfit" class="btn btn-api">Get Outfit</button>
+                        <button id="remove-friend" class="btn btn-api">removing friend</button>
                     </div>
                 </div>
             </div>
@@ -150,21 +80,9 @@
                         <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile">
                     </div>
                     <h3 class="dev-name purple-text">BNGX</h3>
-                    <p class="dev-role">API Provider & Data Specialist</p>
-                    <p class="dev-description">Provides advanced APIs and backend data solutions for hacking tools</p>
+                    <p class="dev-role">CODEX TEAM PANEL</p>
+                    <p class="dev-description">Site creator</p>
                     <a href="https://t.me/BNGXTTT" target="_blank" class="btn btn-telegram purple">
-                        <i class="fab fa-telegram-plane"></i> Contact via Telegram
-                    </a>
-                </div>
-
-                <div class="team-card">
-                    <div class="profile-img black-border">
-                        <img src="{{ url_for('static', filename='images/8791CD4F-AE79-4AA0-AF2C-DE45E15FCE0F_1755810001562.jpeg') }}" alt="BLRXH4RDIXX Profile">
-                    </div>
-                    <h3 class="dev-name green-text">BLRXH4RDIXX</h3>
-                    <p class="dev-role">Website Creator & Lead Developer</p>
-                    <p class="dev-description">Created this hacker-themed website and designed the advanced tool interface</p>
-                    <a href="https://t.me/BLRXH4RDIXX" target="_blank" class="btn btn-telegram green">
                         <i class="fab fa-telegram-plane"></i> Contact via Telegram
                     </a>
                 </div>
@@ -183,8 +101,8 @@
         <!-- Footer -->
         <footer class="footer">
             <p class="glitch-text" data-text="CODEX TEAM">CODEX TEAM</p>
-            <p>Advanced hacking tools and API solutions for the digital underground</p>
-            <p>Website created by BLRXH4RDIXX | APIs provided by BNGX | © 2024 CODEX TEAM</p>
+            <p>CODEX TEAM PANEL BOT FRIEND </p>
+            <p>Website created by BNGX | © 2024 CODEX TEAM</p>
             <p class="warning">⚠️ For educational and authorized testing purposes only</p>
         </footer>
     </div>

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CODEX TEAM - Advanced Hacker Tools</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
     <!-- Matrix Rain Background -->
     <canvas id="matrix-canvas"></canvas>
-    
+
     <div class="container">
         <!-- Header -->
         <header class="header">
@@ -31,38 +31,60 @@
             <div class="tool-container">
                 <!-- Token Verification -->
                 <div class="input-group">
-                    <label for="bio-token">BOT NAME</label>
-                    <input type="text" id="bot-name" placeholder="Enter your bot name..." class="input-field">
+                    <label for="bot-name">BOT NAME</label>
+                    <input type="text" id="bot-name" placeholder="Enter your bot name..." class="input-field" />
                     <button id="verify-your-bot" class="btn btn-verify">CREAT ACC</button>
                 </div>
-                <div id="bot name-status" class="status-message"></div>
+                <div id="bot-name-status" class="status-message"></div>
             </div>
         </section>
-
-        <!-- Item Injection Section -->
 
         <!-- API Tools Section -->
         <section id="api-tools" class="tool-section">
             <h2 class="section-title">API Arsenal</h2>
             <div class="api-grid">
+                <!-- ADD FRIEND -->
                 <div class="api-card">
                     <div class="api-header">
                         <i class="fas fa-user-edit"></i>
                         <h3>ADD FRIEND</h3>
                     </div>
                     <div class="input-group">
-                        <input type="text" id="user-id" placeholder="Enter User ID..." class="input-field">
-                        <button id="adding friend" class="btn btn-api">add friend</button>
+                        <label for="bot-list-add">YOUR BOT LIST</label>
+                        <select id="bot-list-add" class="input-field">
+                            <option value="" disabled selected>Select your bot...</option>
+                            <option value="bot1">Bot 1</option>
+                            <option value="bot2">Bot 2</option>
+                            <option value="bot3">Bot 3</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="user-id" placeholder="Enter User ID..." class="input-field" />
+                    </div>
+                    <div class="input-group">
+                        <label for="days"></label>
+                        <input type="number" id="days" placeholder="Enter days..." min="1" class="input-field" />
+                        <button id="adding-friend" class="btn btn-api">add friend</button>
                     </div>
                 </div>
 
+                <!-- REMOVE FRIEND -->
                 <div class="api-card">
                     <div class="api-header">
                         <i class="fas fa-user-friends"></i>
                         <h3>REMOVE FRIEND</h3>
                     </div>
                     <div class="input-group">
-                        <input type="text" id="friend-player-id" placeholder="Enter Player ID..." class="input-field">
+                        <label for="bot-list-remove">YOUR BOT LIST</label>
+                        <select id="bot-list-remove" class="input-field">
+                            <option value="" disabled selected>Select your bot...</option>
+                            <option value="bot1">Bot 1</option>
+                            <option value="bot2">Bot 2</option>
+                            <option value="bot3">Bot 3</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="friend-player-id" placeholder="Enter Player ID..." class="input-field" />
                         <button id="remove-friend" class="btn btn-api">removing friend</button>
                     </div>
                 </div>
@@ -75,7 +97,7 @@
             <div class="team-grid">
                 <div class="team-card">
                     <div class="profile-img purple-border">
-                        <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile">
+                        <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
                     </div>
                     <h3 class="dev-name purple-text">BNGX</h3>
                     <p class="dev-role">CODEX TEAM PANEL</p>
@@ -105,6 +127,73 @@
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+    document.getElementById('adding-friend').addEventListener('click', () => {
+        const bot = document.getElementById('bot-list-add').value;
+        const userId = document.getElementById('user-id').value.trim();
+        const days = document.getElementById('days').value.trim();
+
+        if (!bot) {
+            alert('Please select a bot from YOUR BOT LIST.');
+            return;
+        }
+        if (!userId) {
+            alert('Please enter a User ID.');
+            return;
+        }
+        if (!days) {
+            alert('Please enter number of days.');
+            return;
+        }
+
+        console.log(`Adding friend: User ID=${userId}, Days=${days}, using Bot=${bot}`);
+
+        // مثال استدعاء API (تبديل حسب وظيفتك)
+        /*
+        fetch('/api/add-friend', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot, userId, days})
+        }).then(res => res.json())
+          .then(data => alert(`Success: ${data.message}`))
+          .catch(err => alert('Error: ' + err.message));
+        */
+        alert(`Sent request to add friend with User ID "${userId}" for ${days} days using bot "${bot}".`);
+    });
+
+
+    document.getElementById('remove-friend').addEventListener('click', () => {
+        const bot = document.getElementById('bot-list-remove').value;
+        const friendId = document.getElementById('friend-player-id').value.trim();
+
+        if (!bot) {
+            alert('Please select a bot from YOUR BOT LIST.');
+            return;
+        }
+        if (!friendId) {
+            alert('Please enter a Player ID.');
+            return;
+        }
+
+        console.log(`Removing friend: Player ID=${friendId} using Bot=${bot}`);
+
+        // مثال استدعاء API (تبديل حسب وظيفتك)
+        /*
+        fetch('/api/remove-friend', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot, friendId})
+        }).then(res => res.json())
+          .then(data => alert(`Success: ${data.message}`))
+          .catch(err => alert('Error: '+err.message));
+        */
+        alert(`Sent request to remove friend with player ID "${friendId}" using bot "${bot}".`);
+    });
+
+    // إغلاق المودال
+    document.querySelector('.close-modal').addEventListener('click', () => {
+        document.getElementById('result-modal').style.display = 'none';
+    });
+    </script>
 </body>
 </html>

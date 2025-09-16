@@ -262,6 +262,7 @@ def add_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
+    days = data.get('days', None)  # القيمة الجديدة
 
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
@@ -288,7 +289,21 @@ def add_friend():
         add_data = add_response.json()
 
         if add_data.get('success', False):
-            return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح"})
+            # إذا كانت قيمة الأيام موجودة، نرسل طلب إضافي لل API الخارجي
+            if days is not None:
+                try:
+                    api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"
+                    external_resp = requests.get(api_url, timeout=5)
+                    external_resp.raise_for_status()
+                    external_data = external_resp.json()
+                    if external_data.get('success') or external_data.get('message'):
+                        return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح وتم إرسال عدد الأيام بنجاح."})
+                    else:
+                        return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح ولكن حدث خطأ في إرسال عدد الأيام."})
+                except Exception as e:
+                    return jsonify({"success": True, "message": f"تمت إضافة الصديق بنجاح لكن حدث خطأ أثناء إرسال عدد الأيام: {str(e)}"})
+            else:
+                return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح"})
         else:
             error_msg = add_data.get('message', "فشل في إضافة الصديق")
             return jsonify({"success": False, "message": error_msg})

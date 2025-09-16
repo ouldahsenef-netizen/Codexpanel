@@ -18,7 +18,7 @@ accounts = {
 }
 
 ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
-REMOVE_URL_TEMPLATE = "https://remove-self.vercel.app/remove_friend?token={token}&uid={uid}"
+REMOVE_URL_TEMPLATE = "https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={uid}"
 
 # -------- إعدادات الحماية --------
 S1X_PROTECTION_CONFIG = {

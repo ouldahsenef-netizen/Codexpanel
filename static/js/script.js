@@ -1,14 +1,14 @@
-// إضافة حدث لزر إنشاء الحساب
+// حدث زر إنشاء الحساب
 document.getElementById('verify-your-bot').addEventListener('click', () => {
-    const botSelect = document.getElementById('bot-select').value;
+    const botNum = document.getElementById('bot-select').value;
     const botName = document.getElementById('bot-name').value.trim();
 
-    if (!botSelect) {
-        alert('Please select a bot number.');
+    if (!botNum) {
+        alert('يرجى اختيار رقم الحساب.');
         return;
     }
     if (!botName) {
-        alert('Please enter a bot name.');
+        alert('يرجى إدخال اسم البوت.');
         return;
     }
 
@@ -18,7 +18,7 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            bot: botSelect,
+            bot: botNum,
             name: botName
         })
     })
@@ -26,18 +26,25 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
     .then(data => {
         if (data.message) {
             alert(data.message);
+            // تحديث أسماء الحسابات المعروضة إذا رجع المحدث
+            if(data.nicknames){
+                for (const [key, nickname] of Object.entries(data.nicknames)) {
+                    const el = document.getElementById(`nick-${key}`);
+                    if(el) el.textContent = nickname || "(فارغ)";
+                }
+            }
         } else if (data.error) {
-            alert('Error: ' + data.error);
+            alert('خطأ: ' + data.error);
         } else {
-            alert('Unexpected response');
+            alert('رد غير متوقع');
         }
     })
     .catch(error => {
-        alert('Request failed: ' + error.message);
+        alert('فشل الطلب: ' + error.message);
     });
 });
 
-// إضافة وظائف أزرار إضافة وإزالة الأصدقاء كما في الكود السابق
+// اضافة وظائف أزرار إضافة وإزالة أصدقاء كما كان سابقًا
 
 document.getElementById('adding-friend').addEventListener('click', () => {
     const bot = document.getElementById('bot-list-add').value;

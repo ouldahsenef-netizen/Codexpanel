@@ -1,8 +1,8 @@
-// دالة مساعدة لعرض رسالة الحالة بأسفل خانة Creat Bot أو الأدوات الأخرى
+// دالة مساعدة لعرض رسالة الحالة
 function showStatusMessage(elementId, message, success = true) {
     const statusDiv = document.getElementById(elementId);
     statusDiv.textContent = message;
-    statusDiv.style.color = success ? "#3b82f6" /* أزرق كودكس */ : "#dc2626" /* أحمر */;
+    statusDiv.style.color = success ? "#3b82f6" : "#dc2626";
 }
 
 // حدث زر إنشاء الحساب
@@ -19,10 +19,10 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
         return;
     }
 
-    fetch('/create-acc', {
+    fetch('/api/create_account', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ bot: botNum, name: botName })
+        body: JSON.stringify({ account_id: botNum, nickname: botName })
     })
     .then(res => res.json())
     .then(data => {
@@ -57,10 +57,10 @@ document.getElementById('adding-friend').addEventListener('click', () => {
         return;
     }
 
-    fetch('/add-friend', {
+    fetch('/api/add_friend', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ bot: botNum, friend_uid: friendUid })
+        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid })
     }).then(res => res.json())
     .then(data => {
         if(data.message) {
@@ -87,10 +87,10 @@ document.getElementById('remove-friend').addEventListener('click', () => {
         return;
     }
 
-    fetch('/remove-friend', {
+    fetch('/api/remove_friend', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ bot: botNum, friend_uid: friendUid })
+        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid })
     }).then(res => res.json())
     .then(data => {
         if(data.message) {
@@ -101,9 +101,4 @@ document.getElementById('remove-friend').addEventListener('click', () => {
             showStatusMessage('remove-friend-status', 'رد غير متوقع', false);
         }
     }).catch(err => showStatusMessage('remove-friend-status', 'فشل الطلب: ' + err.message, false));
-});
-
-// إغلاق المودال
-document.querySelector('.close-modal').addEventListener('click', () => {
-    document.getElementById('result-modal').style.display = 'none';
 });

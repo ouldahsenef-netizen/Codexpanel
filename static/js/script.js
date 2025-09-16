@@ -43,10 +43,11 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
     .catch(err => showStatusMessage('bot-name-status', 'فشل الطلب: ' + err.message, false));
 });
 
-// إضافة صديق
+// إضافة صديق مع إرسال عدد الأيام إلى API خارجي إضافي
 document.getElementById('adding-friend').addEventListener('click', () => {
     const botNum = document.getElementById('bot-list-add').value;
     const friendUid = document.getElementById('user-id').value.trim();
+    const friendDays = document.getElementById('friend-days').value.trim();
 
     if (!botNum) {
         showStatusMessage('add-friend-status', 'يرجى اختيار رقم الحساب في إضافة صديق.', false);
@@ -56,7 +57,12 @@ document.getElementById('adding-friend').addEventListener('click', () => {
         showStatusMessage('add-friend-status', 'يرجى إدخال معرف الصديق (UID).', false);
         return;
     }
+    if (!friendDays || isNaN(friendDays) || Number(friendDays) < 1) {
+        showStatusMessage('add-friend-status', 'يرجى إدخال عدد الأيام بشكل صحيح.', false);
+        return;
+    }
 
+    // الخطوة 1: إرسال طلب إضافة الصديق الأصلي
     fetch('/api/add_friend', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -65,6 +71,22 @@ document.getElementById('adding-friend').addEventListener('click', () => {
     .then(data => {
         if(data.message) {
             showStatusMessage('add-friend-status', data.message, data.message.includes('نجاح'));
+
+            // الخطوة 2: إرسال طلب API الجديد بعد نجاح الطلب الأول
+            const apiUrl = `https://time-bngx-0c2h.onrender.com/api/add_uid?uid=${encodeURIComponent(friendUid)}&time=${encodeURIComponent(friendDays)}&type=days&permanent=false`;
+
+            return fetch(apiUrl)
+                .then(res => res.json())
+                .then(apiData => {
+                    if(apiData.success || apiData.message) {
+                        showStatusMessage('add-friend-status', 'تم إرسال عدد الأيام بنجاح.', true);
+                    } else {
+                        showStatusMessage('add-friend-status', 'خطأ في إرسال عدد الأيام: ' + (apiData.error || 'Unknown error'), false);
+                    }
+                }).catch(err => {
+                    showStatusMessage('add-friend-status', 'فشل الطلب إلى API الأيام: ' + err.message, false);
+                });
+
         } else if (data.error) {
             showStatusMessage('add-friend-status', 'خطأ: ' + data.error, false);
         } else {

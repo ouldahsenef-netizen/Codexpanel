@@ -1,33 +1,60 @@
-from flask import Flask, request, jsonify, render_template, redirect, session, url_for
-import requests
-import time
-import secrets
-import hashlib
-import hmac
-import base64
+import os
 import json
-from functools import wraps
-from collections import defaultdict
+import secrets
 import re
+import time
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, \
+    logout_user, current_user, login_required
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)  # ضروري للجلسات
+app.secret_key = secrets.token_hex(16)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# -------- حسابات البوت --------
-accounts = {
-    "1": {"uid": 4168796933, "password": "FOX_FOX_BY8VI2JJ", "nickname": ""},
-    "2": {"uid": 4168796929, "password": "FOX_FOX_YMPSFPKD", "nickname": ""},
-    "3": {"uid": 4168796924, "password": "FOX_FOX_9WASGXSJ", "nickname": ""},
-}
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'bbngx_login'
 
-ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
-REMOVE_URL_TEMPLATE = "https://remove-self.vercel.app/remove_friend?token={token}&uid={uid}"
+# -------- نموذج بيانات المستخدم الإداري --------
+class AdminUser(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    max_accounts = db.Column(db.Integer, default=3)  # الحد الأقصى لحسابات البوت
 
-# -------- حماية S1X TEAM --------
+@login_manager.user_loader
+def load_user(user_id):
+    return AdminUser.query.get(int(user_id))
+
+# -------- بيانات ملف الحسابات --------
+ACCOUNTS_FILE = 'accs.json'
+OWNERSHIP_FILE = 'user_bot_owners.json'
+
+def load_accounts():
+    if os.path.exists(ACCOUNTS_FILE):
+        with open(ACCOUNTS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return {str(acc['uid']): acc for acc in data}
+    return {}
+
+def load_user_bot_owners():
+    if os.path.exists(OWNERSHIP_FILE):
+        with open(OWNERSHIP_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
+
+def save_user_bot_owners(data):
+    with open(OWNERSHIP_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+accounts = load_accounts()
+user_bot_owners = load_user_bot_owners()
+
+# -------- حماية CAPTCHA بسيطة --------
 S1X_PROTECTION_CONFIG = {
-    'enabled': True,
     'max_attempts': 3,
-    'block_duration': 15,
     'challenge_timeout': 300,
     'suspicious_patterns': [
         r'bot', r'crawler', r'spider', r'scraper', r'curl', r'wget',
@@ -36,22 +63,6 @@ S1X_PROTECTION_CONFIG = {
     ]
 }
 
-verification_sessions = {}
-failed_challenges = defaultdict(int)
-
-# جدول المستخدمين الإداريين (للدخول)
-ADMIN_USERS = {
-    "admin": {
-        "password": "adminpass",  # غيّرها لكلمة سر آمنة
-    }
-}
-
-def get_client_ip():
-    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
-        return request.environ.get('REMOTE_ADDR', '')
-    else:
-        return request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0].strip()
-
 def is_bot_user_agent(user_agent):
     if not user_agent:
         return True
@@ -59,64 +70,32 @@ def is_bot_user_agent(user_agent):
     for pattern in S1X_PROTECTION_CONFIG['suspicious_patterns']:
         if re.search(pattern, ua):
             return True
-    known_browsers = ['mozilla', 'webkit', 'chrome', 'firefox', 'safari', 'edge']
-    return not any(browser in ua for browser in known_browsers)
+    known = ['mozilla', 'webkit', 'chrome', 'firefox', 'safari', 'edge']
+    return not any(k in ua for k in known)
 
-# ديكوريتر للحماية والتأكد من الكابتشا ثم الدخول
-def codex_protection_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        ip = get_client_ip()
-        ua = request.headers.get('User-Agent', '')
-        endpoint = request.path
-
-        session_data = verification_sessions.get(ip)
-        if session_data and session_data.get('captcha_verified', False) and session_data.get('admin_logged_in', False):
-            if time.time() - session_data.get('verified_at', 0) < 1800:
-                return f(*args, **kwargs)
-            else:
-                # انتهاء صلاحية الجلسة
-                verification_sessions.pop(ip, None)
-
-        # إذا لم يدخل المستخدم التحقق أو لم يسجل دخول، نوجهه لكابتشا أو تسجيل دخول
-        if not session_data or not session_data.get('captcha_verified', False):
-            if request.is_json or '/api/' in endpoint:
-                return jsonify({
-                    'success': False,
-                    'error': 'Security challenge required',
-                    'message': 'Please complete security verification',
-                    'challenge_url': url_for('security_challenge'),
-                    'code': 403
-                }), 403
-            else:
-                return redirect(url_for('security_challenge'))
-
-        if not session_data.get('admin_logged_in', False):
-            return redirect(url_for('admin_login'))
-
-        return f(*args, **kwargs)
-    return decorated
-
-@app.route('/api/security/generate-challenge')
 def generate_challenge():
     import random
-    operations = ['+', '-', '*']
-    op = random.choice(operations)
+    ops = ['+', '-', '*']
+    op = random.choice(ops)
     if op == '+':
         n1 = random.randint(1, 50)
         n2 = random.randint(1, 50)
-        answer = n1 + n2
+        ans = n1 + n2
     elif op == '-':
         n1 = random.randint(20, 70)
         n2 = random.randint(1, 20)
-        answer = n1 - n2
+        ans = n1 - n2
     else:
         n1 = random.randint(1, 10)
         n2 = random.randint(1, 10)
-        answer = n1 * n2
-    question = f"{n1} {op} {n2} = ?"
-    session['captcha_answer'] = answer
-    return jsonify({"question": question})
+        ans = n1 * n2
+    return f"{n1} {op} {n2} = ?", ans
+
+@app.route('/api/security/generate-challenge')
+def api_generate_challenge():
+    q, a = generate_challenge()
+    session['captcha_answer'] = a
+    return jsonify({'question': q})
 
 @app.route('/security/challenge')
 def security_challenge():
@@ -124,76 +103,119 @@ def security_challenge():
 
 @app.route('/api/security/verify-human', methods=['POST'])
 def verify_human():
-    client_ip = get_client_ip()
-    data = request.json
-    user_answer = data.get('answer')
-    user_agent = data.get('user_agent', '')
-
-    if not user_answer or session.get('captcha_answer') is None:
-        return jsonify({"success": False, "message": "Invalid challenge data"}), 400
-
+    answer = request.json.get('answer')
     try:
-        user_answer = int(user_answer)
-    except ValueError:
-        return jsonify({"success": False, "message": "Answer must be a number"}), 400
-
-    correct_answer = session.get('captcha_answer')
-
-    if user_answer == correct_answer:
-        verification_sessions[client_ip] = {
-            'captcha_verified': True,
-            'verified_at': time.time(),
-            'user_agent': user_agent,
-            'admin_logged_in': False  # للدخول بعدها إلى صفحة تسجيل الدخول
-        }
-        failed_challenges.pop(client_ip, None)
-        return jsonify({"success": True, "message": "Verification successful"})
+        answer = int(answer)
+    except:
+        return jsonify({"success": False, "message": "الرجاء إدخال عدد صحيح"}), 400
+    correct = session.get('captcha_answer')
+    if correct is None:
+        return jsonify({"success": False, "message": "الرجاء توليد التحدي أولاً"}), 400
+    if answer == correct:
+        session['captcha_verified'] = True
+        return jsonify({"success": True, "message": "تم التحقق بنجاح"})
     else:
-        failed_challenges[client_ip] += 1
-        if failed_challenges[client_ip] >= S1X_PROTECTION_CONFIG['max_attempts']:
-            return jsonify({"success": False, "message": "Exceeded max attempts. IP temporarily blocked."}), 403
-        return jsonify({"success": False, "message": "Incorrect answer. Try again."}), 403
+        return jsonify({"success": False, "message": "الإجابة خاطئة"}), 403
 
-@app.route('/admin/login', methods=['GET'])
-def admin_login():
-    # تعرض صفحة تسجيل الدخول فقط بعد نجاح الكابتشا
-    ip = get_client_ip()
-    session_data = verification_sessions.get(ip)
-    if not session_data or not session_data.get('captcha_verified', False):
+# -------- صفحة تسجيل الدخول الإدمن BBGNL --------
+@app.route('/bbngx_login', methods=['GET', 'POST'])
+def bbngx_login():
+    if not session.get('captcha_verified'):
         return redirect(url_for('security_challenge'))
-    return render_template('admin_login.html')
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = AdminUser.query.filter_by(username=username).first()
+        if user and user.password == password:
+            login_user(user)
+            session['captcha_verified'] = True
+            session['username'] = username
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('اسم المستخدم أو كلمة المرور خاطئة', 'error')
+            return redirect(url_for('bbngx_login'))
+    return render_template('bbngx_login.html')
 
-@app.route('/admin/authenticate', methods=['POST'])
-def admin_authenticate():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
+@app.route('/admin/logout')
+@login_required
+def admin_logout():
+    logout_user()
+    session.pop('captcha_verified', None)
+    session.pop('username', None)
+    flash('تم تسجيل الخروج', 'success')
+    return redirect(url_for('bbngx_login'))
 
-    ip = get_client_ip()
-    session_data = verification_sessions.get(ip)
+# -------- لوحة تحكم الادمن --------
+@app.route('/admin/dashboard')
+@login_required
+def admin_dashboard():
+    username = current_user.username
+    max_accounts = current_user.max_accounts
+    # حسابات البوت التي يملكها المستخدم
+    owned_uids = user_bot_owners.get(username, [])
+    owned_accounts = [accounts[uid] for uid in owned_uids if uid in accounts]
+    return render_template('dashboard.html',
+                           bots=owned_accounts,
+                           max_accounts=max_accounts,
+                           current_count=len(owned_accounts),
+                           user=username)
 
-    if not session_data or not session_data.get('captcha_verified', False):
-        return jsonify({'success': False, 'message': 'Complete CAPTCHA verification first.'}), 403
+# إضافة حساب حساب بوت للعضو
+@app.route('/admin/add_bot', methods=['POST'])
+@login_required
+def add_bot():
+    username = current_user.username
+    uid = request.form.get('uid')
+    if uid not in accounts:
+        flash('الحساب غير موجود في accs.json')
+        return redirect(url_for('admin_dashboard'))
 
-    user = ADMIN_USERS.get(username)
-    if user and user['password'] == password:
-        verification_sessions[ip]['admin_logged_in'] = True
-        verification_sessions[ip]['verified_at'] = time.time()
-        session_id = secrets.token_hex(16)
-        verification_sessions[ip]['session_id'] = session_id
-        return jsonify({'success': True, 'session_id': session_id})
+    # عدد الحسابات التي يمتلكها المستخدم
+    owned_uids = user_bot_owners.get(username, [])
+    if len(owned_uids) >= current_user.max_accounts:
+        flash('وصلت للحد الأقصى لحسابات البوت')
+        return redirect(url_for('admin_dashboard'))
+
+    if uid in owned_uids:
+        flash('هذا الحساب مملوك لك مسبقاً')
+        return redirect(url_for('admin_dashboard'))
+
+    owned_uids.append(uid)
+    user_bot_owners[username] = owned_uids
+    save_user_bot_owners(user_bot_owners)
+    flash('تم إضافة الحساب بنجاح')
+    return redirect(url_for('admin_dashboard'))
+
+# حذف حساب بوت للعضو
+@app.route('/admin/delete_bot', methods=['POST'])
+@login_required
+def delete_bot():
+    username = current_user.username
+    uid = request.form.get('uid')
+    owned_uids = user_bot_owners.get(username, [])
+    if uid in owned_uids:
+        owned_uids.remove(uid)
+        user_bot_owners[username] = owned_uids
+        save_user_bot_owners(user_bot_owners)
+        flash('تم حذف الحساب بنجاح')
     else:
-        return jsonify({'success': False, 'message': 'Invalid username or password.'})
+        flash('الحساب غير مملوك لك')
+    return redirect(url_for('admin_dashboard'))
 
+# -------- الصفحة الرئيسية بعد تسجيل الدخول --------
 @app.route('/')
-@codex_protection_required
+@login_required
 def index():
-    nicknames = {k: v['nickname'] for k, v in accounts.items()}
-    return render_template('index.html', nicknames=nicknames)
+    return render_template('index.html')
 
-# تبقى باقي الدوال API كما هي مع ديكوريتر الحماية
-
-# ... (الدوال create_acc, add_friend, remove_friend من الكود السابق تبقى كما هي مع @codex_protection_required)
+# -------- تشغيل أولي --------
+@app.before_first_request
+def initial_setup():
+    db.create_all()
+    if not AdminUser.query.filter_by(username='admin').first():
+        admin = AdminUser(username='admin', password='adminpass', max_accounts=5)
+        db.session.add(admin)
+        db.session.commit()
 
 if __name__ == '__main__':
     app.run(debug=True)

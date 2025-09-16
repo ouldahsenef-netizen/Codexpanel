@@ -29,13 +29,33 @@
         <section id="bio-tool" class="tool-section">
             <h2 class="section-title">Creat Bot Tool</h2>
             <div class="tool-container">
-                <!-- Token Verification -->
+                <!-- اختيار رقم الحساب -->
+                <div class="input-group">
+                    <label for="bot-select">اختر رقم الحساب</label>
+                    <select id="bot-select" class="input-field">
+                        <option value="" disabled selected>اختر رقم الحساب...</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <!-- اسم البوت -->
                 <div class="input-group">
                     <label for="bot-name">BOT NAME</label>
                     <input type="text" id="bot-name" placeholder="Enter your bot name..." class="input-field" />
                     <button id="verify-your-bot" class="btn btn-verify">CREAT ACC</button>
                 </div>
                 <div id="bot-name-status" class="status-message"></div>
+
+                <!-- عرض أسماء الحسابات بعد التغيير -->
+                <div id="accounts-status" style="margin-top: 20px;">
+                    <h3>حالة الحسابات:</h3>
+                    <ul>
+                        <li>الحساب 1: <span id="nick-1">{{ nicknames.get('1', '') }}</span></li>
+                        <li>الحساب 2: <span id="nick-2">{{ nicknames.get('2', '') }}</span></li>
+                        <li>الحساب 3: <span id="nick-3">{{ nicknames.get('3', '') }}</span></li>
+                    </ul>
+                </div>
             </div>
         </section>
 
@@ -127,73 +147,6 @@
         </footer>
     </div>
 
-    <script>
-    document.getElementById('adding-friend').addEventListener('click', () => {
-        const bot = document.getElementById('bot-list-add').value;
-        const userId = document.getElementById('user-id').value.trim();
-        const days = document.getElementById('days').value.trim();
-
-        if (!bot) {
-            alert('Please select a bot from YOUR BOT LIST.');
-            return;
-        }
-        if (!userId) {
-            alert('Please enter a User ID.');
-            return;
-        }
-        if (!days) {
-            alert('Please enter number of days.');
-            return;
-        }
-
-        console.log(`Adding friend: User ID=${userId}, Days=${days}, using Bot=${bot}`);
-
-        // مثال استدعاء API (تبديل حسب وظيفتك)
-        /*
-        fetch('/api/add-friend', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({bot, userId, days})
-        }).then(res => res.json())
-          .then(data => alert(`Success: ${data.message}`))
-          .catch(err => alert('Error: ' + err.message));
-        */
-        alert(`Sent request to add friend with User ID "${userId}" for ${days} days using bot "${bot}".`);
-    });
-
-
-    document.getElementById('remove-friend').addEventListener('click', () => {
-        const bot = document.getElementById('bot-list-remove').value;
-        const friendId = document.getElementById('friend-player-id').value.trim();
-
-        if (!bot) {
-            alert('Please select a bot from YOUR BOT LIST.');
-            return;
-        }
-        if (!friendId) {
-            alert('Please enter a Player ID.');
-            return;
-        }
-
-        console.log(`Removing friend: Player ID=${friendId} using Bot=${bot}`);
-
-        // مثال استدعاء API (تبديل حسب وظيفتك)
-        /*
-        fetch('/api/remove-friend', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({bot, friendId})
-        }).then(res => res.json())
-          .then(data => alert(`Success: ${data.message}`))
-          .catch(err => alert('Error: '+err.message));
-        */
-        alert(`Sent request to remove friend with player ID "${friendId}" using bot "${bot}".`);
-    });
-
-    // إغلاق المودال
-    document.querySelector('.close-modal').addEventListener('click', () => {
-        document.getElementById('result-modal').style.display = 'none';
-    });
-    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

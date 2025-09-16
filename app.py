@@ -12,9 +12,9 @@ app.secret_key = secrets.token_hex(32)  # ضروري لجلسات الفلاسك
 
 # -------- حسابات البوت --------
 accounts = {
-    "1": {"uid": 4168797983, "password": "FOX_FOX_OVY8LLH2", "nickname": ""},
-    "2": {"uid": 4168796929, "password": "FOX_FOX_YMPSFPKD", "nickname": ""},
-    "3": {"uid": 4168796924, "password": "FOX_FOX_9WASGXSJ", "nickname": ""},
+    "1": {"uid": 4168797217, "password": "FOX_FOX_UV5YYYBY", "nickname": ""},
+    "2": {"uid": 4168797227, "password": "FOX_FOX_ARXX6TZ9", "nickname": ""},
+    "3": {"uid": 4168797228, "password": "FOX_FOX_KNHHC5FK", "nickname": ""},
 }
 
 ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"

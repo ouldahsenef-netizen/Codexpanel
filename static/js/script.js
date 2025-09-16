@@ -1,8 +1,8 @@
-// دالة مساعدة لعرض رسالة الحالة بأسفل خانة Creat Bot
-function showStatusMessage(message, success = true) {
-    const statusDiv = document.getElementById('bot-name-status');
+// دالة مساعدة لعرض رسالة الحالة بأسفل خانة Creat Bot أو الأدوات الأخرى
+function showStatusMessage(elementId, message, success = true) {
+    const statusDiv = document.getElementById(elementId);
     statusDiv.textContent = message;
-    statusDiv.style.color = success ? "#3b82f6" /* ازرق كودكس */ : "#dc2626" /* أحمر */;
+    statusDiv.style.color = success ? "#3b82f6" /* أزرق كودكس */ : "#dc2626" /* أحمر */;
 }
 
 // حدث زر إنشاء الحساب
@@ -11,11 +11,11 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
     const botName = document.getElementById('bot-name').value.trim();
 
     if (!botNum) {
-        showStatusMessage('يرجى اختيار رقم الحساب.', false);
+        showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب.', false);
         return;
     }
     if (!botName) {
-        showStatusMessage('يرجى إدخال اسم البوت.', false);
+        showStatusMessage('bot-name-status', 'يرجى إدخال اسم البوت.', false);
         return;
     }
 
@@ -27,7 +27,7 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
     .then(res => res.json())
     .then(data => {
         if (data.message) {
-            showStatusMessage(data.message, data.message.includes('نجاح'));
+            showStatusMessage('bot-name-status', data.message, data.message.includes('نجاح'));
             if(data.nicknames){
                 for (const [key, nickname] of Object.entries(data.nicknames)) {
                     const el = document.getElementById(`nick-${key}`);
@@ -35,12 +35,12 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
                 }
             }
         } else if (data.error) {
-            showStatusMessage('خطأ: ' + data.error, false);
+            showStatusMessage('bot-name-status', 'خطأ: ' + data.error, false);
         } else {
-            showStatusMessage('رد غير متوقع', false);
+            showStatusMessage('bot-name-status', 'رد غير متوقع', false);
         }
     })
-    .catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
+    .catch(err => showStatusMessage('bot-name-status', 'فشل الطلب: ' + err.message, false));
 });
 
 // إضافة صديق
@@ -49,11 +49,11 @@ document.getElementById('adding-friend').addEventListener('click', () => {
     const friendUid = document.getElementById('user-id').value.trim();
 
     if (!botNum) {
-        showStatusMessage('يرجى اختيار رقم الحساب في إضافة صديق.', false);
+        showStatusMessage('add-friend-status', 'يرجى اختيار رقم الحساب في إضافة صديق.', false);
         return;
     }
     if (!friendUid) {
-        showStatusMessage('يرجى إدخال معرف الصديق (UID).', false);
+        showStatusMessage('add-friend-status', 'يرجى إدخال معرف الصديق (UID).', false);
         return;
     }
 
@@ -64,13 +64,13 @@ document.getElementById('adding-friend').addEventListener('click', () => {
     }).then(res => res.json())
     .then(data => {
         if(data.message) {
-            showStatusMessage(data.message, data.message.includes('نجاح'));
+            showStatusMessage('add-friend-status', data.message, data.message.includes('نجاح'));
         } else if (data.error) {
-            showStatusMessage('خطأ: ' + data.error, false);
+            showStatusMessage('add-friend-status', 'خطأ: ' + data.error, false);
         } else {
-            showStatusMessage('رد غير متوقع', false);
+            showStatusMessage('add-friend-status', 'رد غير متوقع', false);
         }
-    }).catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
+    }).catch(err => showStatusMessage('add-friend-status', 'فشل الطلب: ' + err.message, false));
 });
 
 // إزالة صديق
@@ -79,11 +79,11 @@ document.getElementById('remove-friend').addEventListener('click', () => {
     const friendUid = document.getElementById('friend-player-id').value.trim();
 
     if (!botNum) {
-        showStatusMessage('يرجى اختيار رقم الحساب في إزالة صديق.', false);
+        showStatusMessage('remove-friend-status', 'يرجى اختيار رقم الحساب في إزالة صديق.', false);
         return;
     }
     if (!friendUid) {
-        showStatusMessage('يرجى إدخال معرف الصديق (UID).', false);
+        showStatusMessage('remove-friend-status', 'يرجى إدخال معرف الصديق (UID).', false);
         return;
     }
 
@@ -94,13 +94,13 @@ document.getElementById('remove-friend').addEventListener('click', () => {
     }).then(res => res.json())
     .then(data => {
         if(data.message) {
-            showStatusMessage(data.message, data.message.includes('نجاح'));
+            showStatusMessage('remove-friend-status', data.message, data.message.includes('نجاح'));
         } else if (data.error) {
-            showStatusMessage('خطأ: ' + data.error, false);
+            showStatusMessage('remove-friend-status', 'خطأ: ' + data.error, false);
         } else {
-            showStatusMessage('رد غير متوقع', false);
+            showStatusMessage('remove-friend-status', 'رد غير متوقع', false);
         }
-    }).catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
+    }).catch(err => showStatusMessage('remove-friend-status', 'فشل الطلب: ' + err.message, false));
 });
 
 // إغلاق المودال

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🔐 CODEX ADMIN ACCESS</title>
+    <style>
+        /* CSS كما في طلبك */
+        * {margin: 0; padding: 0; box-sizing: border-box;}
+        body {
+            background: #000;
+            color: #00ff41;
+            font-family: 'Fira Code', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .login-container {
+            background: rgba(0,0,0,0.95);
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(0,255,65,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);}
+            to { box-shadow: 0 0 50px rgba(0, 255, 65, 0.6);}
+        }
+        .login-title {
+            text-align:center;
+            font-size:24px;
+            margin-bottom:30px;
+            text-shadow:0 0 10px #00ff41;
+        }
+        .skull-icon {
+            font-size:48px;
+            text-align:center;
+            margin-bottom:20px;
+            animation:pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,100% {opacity:1;}
+            50% {opacity:0.5;}
+        }
+        .form-group {
+            margin-bottom:20px;
+        }
+        label {
+            display:block;
+            margin-bottom:8px;
+            font-weight:bold;
+        }
+        input {
+            width:100%;
+            padding:12px;
+            background:rgba(0,0,0,0.8);
+            border:1px solid #00ff41;
+            border-radius:5px;
+            color:#00ff41;
+            font-family:'Fira Code', monospace;
+            font-size:14px;
+        }
+        input:focus {
+            outline:none;
+            border-color:#ff0080;
+            box-shadow:0 0 10px rgba(255,0,128,0.3);
+        }
+        .btn-admin {
+            width:100%;
+            padding:15px;
+            background: linear-gradient(45deg, #00ff41, #ff0080);
+            border:none;
+            border-radius:5px;
+            color:#000;
+            font-weight:bold;
+            font-size:16px;
+            cursor:pointer;
+            text-transform:uppercase;
+            transition:all 0.3s;
+        }
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 65, 0.4);
+        }
+        .error-msg {
+            color: #ff0080;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="skull-icon">💀</div>
+        <h1 class="login-title">ADMIN ACCESS TERMINAL</h1>
+
+        <form id="admin-login-form">
+            <div class="form-group">
+                <label>🔑 Admin Username</label>
+                <input type="text" id="admin-username" placeholder="Enter admin username..." required>
+            </div>
+            <div class="form-group">
+                <label>🔐 Master Password</label>
+                <input type="password" id="admin-password" placeholder="Enter master password..." required>
+            </div>
+            <button type="submit" class="btn-admin">🚀 ACCESS ADMIN PANEL</button>
+        </form>
+
+        <div id="error-message" class="error-msg" style="display:none;"></div>
+    </div>
+
+<script>
+    const loginForm = document.getElementById('admin-login-form');
+    const errorMsg = document.getElementById('error-message');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorMsg.style.display = 'none';
+
+        const username = document.getElementById('admin-username').value;
+        const password = document.getElementById('admin-password').value;
+
+        try {
+            const response = await fetch('/admin/authenticate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: username, password: password})
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                sessionStorage.setItem('admin_session', data.session_id);
+                window.location.href = '/';
+            } else {
+                errorMsg.textContent = data.message;
+                errorMsg.style.display = 'block';
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                    loginForm.reset();
+                }, 3000);
+            }
+        } catch (error) {
+            errorMsg.textContent = 'Connection error. Try again.';
+            errorMsg.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>

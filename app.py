@@ -17,18 +17,16 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'bbngx_login'
 
-# -------- نموذج بيانات المستخدم الإداري --------
 class AdminUser(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    max_accounts = db.Column(db.Integer, default=3)  # الحد الأقصى لحسابات البوت
+    max_accounts = db.Column(db.Integer, default=3)
 
 @login_manager.user_loader
 def load_user(user_id):
     return AdminUser.query.get(int(user_id))
 
-# -------- بيانات ملف الحسابات --------
 ACCOUNTS_FILE = 'accs.json'
 OWNERSHIP_FILE = 'user_bot_owners.json'
 
@@ -52,7 +50,6 @@ def save_user_bot_owners(data):
 accounts = load_accounts()
 user_bot_owners = load_user_bot_owners()
 
-# -------- حماية CAPTCHA بسيطة --------
 S1X_PROTECTION_CONFIG = {
     'max_attempts': 3,
     'challenge_timeout': 300,
@@ -117,7 +114,6 @@ def verify_human():
     else:
         return jsonify({"success": False, "message": "الإجابة خاطئة"}), 403
 
-# -------- صفحة تسجيل الدخول الإدمن BBGNL --------
 @app.route('/bbngx_login', methods=['GET', 'POST'])
 def bbngx_login():
     if not session.get('captcha_verified'):
@@ -145,13 +141,11 @@ def admin_logout():
     flash('تم تسجيل الخروج', 'success')
     return redirect(url_for('bbngx_login'))
 
-# -------- لوحة تحكم الادمن --------
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
     username = current_user.username
     max_accounts = current_user.max_accounts
-    # حسابات البوت التي يملكها المستخدم
     owned_uids = user_bot_owners.get(username, [])
     owned_accounts = [accounts[uid] for uid in owned_uids if uid in accounts]
     return render_template('dashboard.html',
@@ -160,7 +154,6 @@ def admin_dashboard():
                            current_count=len(owned_accounts),
                            user=username)
 
-# إضافة حساب حساب بوت للعضو
 @app.route('/admin/add_bot', methods=['POST'])
 @login_required
 def add_bot():
@@ -169,24 +162,19 @@ def add_bot():
     if uid not in accounts:
         flash('الحساب غير موجود في accs.json')
         return redirect(url_for('admin_dashboard'))
-
-    # عدد الحسابات التي يمتلكها المستخدم
     owned_uids = user_bot_owners.get(username, [])
     if len(owned_uids) >= current_user.max_accounts:
         flash('وصلت للحد الأقصى لحسابات البوت')
         return redirect(url_for('admin_dashboard'))
-
     if uid in owned_uids:
         flash('هذا الحساب مملوك لك مسبقاً')
         return redirect(url_for('admin_dashboard'))
-
     owned_uids.append(uid)
     user_bot_owners[username] = owned_uids
     save_user_bot_owners(user_bot_owners)
     flash('تم إضافة الحساب بنجاح')
     return redirect(url_for('admin_dashboard'))
 
-# حذف حساب بوت للعضو
 @app.route('/admin/delete_bot', methods=['POST'])
 @login_required
 def delete_bot():
@@ -202,20 +190,27 @@ def delete_bot():
         flash('الحساب غير مملوك لك')
     return redirect(url_for('admin_dashboard'))
 
-# -------- الصفحة الرئيسية بعد تسجيل الدخول --------
 @app.route('/')
 @login_required
 def index():
     return render_template('index.html')
 
-# -------- تشغيل أولي --------
-@app.before_first_request
+# البديل لـ before_first_request لتشغيل الكود مرة واحدة فقط
 def initial_setup():
     db.create_all()
     if not AdminUser.query.filter_by(username='admin').first():
         admin = AdminUser(username='admin', password='adminpass', max_accounts=5)
         db.session.add(admin)
         db.session.commit()
+
+def run_once():
+    if not hasattr(app, 'initial_setup_done'):
+        initial_setup()
+        app.initial_setup_done = True
+
+@app.before_request
+def before_request_func():
+    run_once()
 
 if __name__ == '__main__':
     app.run(debug=True)

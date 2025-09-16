@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8" />
+<title>تسجيل دخول BNGX Admin</title>
+</head>
+<body>
+<h2>تسجيل دخول BNGX Admin</h2>
+{% if error %}
+   <p style="color:red;">{{ error }}</p>
+{% endif %}
+<form method="post" autocomplete="off">
+  <label>اسم المستخدم: <input type="text" name="username" required /></label><br/>
+  <label>كلمة السر: <input type="password" name="password" required /></label><br/>
+  <button type="submit">تسجيل الدخول</button>
+</form>
+</body>
+</html>

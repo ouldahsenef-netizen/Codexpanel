@@ -2,14 +2,13 @@ import os
 import json
 import secrets
 import re
-import time
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template_string, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, \
-    logout_user, current_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -17,60 +16,40 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'bbngx_login'
 
+# ===== MODELS =====
+
+class SuperAdmin(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    password = db.Column(db.String(120))
+
 class AdminUser(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
+    username = db.Column(db.String(80), unique=True)
+    password = db.Column(db.String(120))
     max_accounts = db.Column(db.Integer, default=3)
+
+class BotAccount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.String(80), unique=True)
+    password = db.Column(db.String(120))
+    owner_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
 
 @login_manager.user_loader
 def load_user(user_id):
-    return AdminUser.query.get(int(user_id))
+    user = SuperAdmin.query.get(int(user_id))
+    if user:
+        user.is_superadmin = True
+        return user
+    user = AdminUser.query.get(int(user_id))
+    if user:
+        user.is_superadmin = False
+        return user
+    return None
 
-ACCOUNTS_FILE = 'accs.json'
-OWNERSHIP_FILE = 'user_bot_owners.json'
+# ===== CAPTCHA protection (simplified) =====
 
-def load_accounts():
-    if os.path.exists(ACCOUNTS_FILE):
-        with open(ACCOUNTS_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return {str(acc['uid']): acc for acc in data}
-    return {}
-
-def load_user_bot_owners():
-    if os.path.exists(OWNERSHIP_FILE):
-        with open(OWNERSHIP_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {}
-
-def save_user_bot_owners(data):
-    with open(OWNERSHIP_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-accounts = load_accounts()
-user_bot_owners = load_user_bot_owners()
-
-S1X_PROTECTION_CONFIG = {
-    'max_attempts': 3,
-    'challenge_timeout': 300,
-    'suspicious_patterns': [
-        r'bot', r'crawler', r'spider', r'scraper', r'curl', r'wget',
-        r'python', r'java', r'php', r'perl', r'ruby', r'node',
-        r'automated', r'script', r'tool', r'scanner', r'test'
-    ]
-}
-
-def is_bot_user_agent(user_agent):
-    if not user_agent:
-        return True
-    ua = user_agent.lower()
-    for pattern in S1X_PROTECTION_CONFIG['suspicious_patterns']:
-        if re.search(pattern, ua):
-            return True
-    known = ['mozilla', 'webkit', 'chrome', 'firefox', 'safari', 'edge']
-    return not any(k in ua for k in known)
-
-def generate_challenge():
+def generate_captcha():
     import random
     ops = ['+', '-', '*']
     op = random.choice(ops)
@@ -88,129 +67,257 @@ def generate_challenge():
         ans = n1 * n2
     return f"{n1} {op} {n2} = ?", ans
 
-@app.route('/api/security/generate-challenge')
-def api_generate_challenge():
-    q, a = generate_challenge()
-    session['captcha_answer'] = a
-    return jsonify({'question': q})
-
 @app.route('/security/challenge')
 def security_challenge():
-    return render_template('captcha.html')
+    question, answer = generate_captcha()
+    session['captcha_answer'] = answer
+    return render_template_string('''
+    <html><head><title>CAPTCHA</title></head><body style="background:#000;color:#0f0;font-family:monospace;text-align:center;">
+    <h1>حل CAPTCHA للتحقق</h1>
+    <form method="POST" action="{{ url_for('verify_captcha') }}">
+        <p style="font-size:20px;">{{ question }}</p>
+        <input name="answer" type="number" required style="font-size:18px;padding:5px;" />
+        <button type="submit" style="font-size:18px;">تحقق</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <p style="color:red;">{{ messages[0] }}</p>
+      {% endif %}
+    {% endwith %}
+    </body></html>
+    ''', question=question)
 
-@app.route('/api/security/verify-human', methods=['POST'])
-def verify_human():
-    answer = request.json.get('answer')
+@app.route('/security/verify', methods=['POST'])
+def verify_captcha():
     try:
-        answer = int(answer)
+        user_answer = int(request.form.get('answer',''))
     except:
-        return jsonify({"success": False, "message": "الرجاء إدخال عدد صحيح"}), 400
-    correct = session.get('captcha_answer')
-    if correct is None:
-        return jsonify({"success": False, "message": "الرجاء توليد التحدي أولاً"}), 400
-    if answer == correct:
-        session['captcha_verified'] = True
-        return jsonify({"success": True, "message": "تم التحقق بنجاح"})
-    else:
-        return jsonify({"success": False, "message": "الإجابة خاطئة"}), 403
+        flash("أدخل رقماً صحيحاً.")
+        return redirect(url_for('security_challenge'))
 
-@app.route('/bbngx_login', methods=['GET', 'POST'])
-def bbngx_login():
+    if user_answer == session.get('captcha_answer'):
+        session['captcha_verified'] = True
+        # Redirect to superadmin login by default
+        return redirect(url_for('superadmin_login'))
+    else:
+        flash('الإجابة خاطئة، حاول مرة أخرى.')
+        return redirect(url_for('security_challenge'))
+
+# ===== SuperAdmin login & panel =====
+
+@app.route('/superadmin/login', methods=['GET','POST'])
+def superadmin_login():
     if not session.get('captcha_verified'):
         return redirect(url_for('security_challenge'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = SuperAdmin.query.filter_by(username=username).first()
+        if user and user.password == password:
+            login_user(user)
+            return redirect(url_for('superadmin_panel'))
+        else:
+            flash("اسم المستخدم أو كلمة المرور خاطئة")
+            return redirect(url_for('superadmin_login'))
+    return render_template_string('''
+    <html><head><title>دخول السوبر أدمن</title></head><body style="background:#000;color:#0f0;font-family:monospace;text-align:center;">
+    <h1>تسجيل دخول السوبر أدمن</h1>
+    <form method="POST">
+        <input name="username" placeholder="اسم المستخدم" required />
+        <input name="password" type="password" placeholder="كلمة المرور" required />
+        <button type="submit">دخول</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <p style="color:red;">{{ messages[0] }}</p>
+      {% endif %}
+    {% endwith %}
+    </body></html>
+    ''')
+
+@app.route('/superadmin/panel')
+@login_required
+def superadmin_panel():
+    if not getattr(current_user, 'is_superadmin', False):
+        return redirect(url_for('admin_login'))
+
+    admins = AdminUser.query.all()
+    return render_template_string('''
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8" />
+<title>لوحة السوبر أدمن</title></head><body style="background:#000;color:#0f0;font-family:monospace;padding:20px;">
+<h1>لوحة تحكم السوبر أدمن</h1>
+<p><a href="{{ url_for('logout') }}" style="color:#f00;">تسجيل خروج</a></p>
+<h2>إنشاء حساب إداري جديد</h2>
+<form method="POST" action="{{ url_for('create_admin') }}">
+  <input name="username" placeholder="اسم المستخدم" required />
+  <input name="password" type="password" placeholder="كلمة المرور" required />
+  <input name="max_accounts" type="number" min="1" value="3" required />
+  <button type="submit">إنشاء</button>
+</form>
+
+<h2>قائمة الأعضاء الإداريين</h2>
+<table border="1" cellpadding="5" cellspacing="0" style="width:100%;color:#0f0;">
+  <tr><th>اسم المستخدم</th><th>الحد الأقصى لحسابات البوت</th></tr>
+  {% for admin in admins %}
+    <tr><td>{{ admin.username }}</td><td>{{ admin.max_accounts }}</td></tr>
+  {% else %}
+    <tr><td colspan="2">لا يوجد أعضاء.</td></tr>
+  {% endfor %}
+</table>
+</body></html>
+''', admins=admins)
+
+@app.route('/superadmin/create_admin', methods=['POST'])
+@login_required
+def create_admin():
+    if not getattr(current_user, 'is_superadmin', False):
+        return redirect(url_for('admin_login'))
+
+    username = request.form.get('username')
+    password = request.form.get('password')
+    max_accounts = int(request.form.get('max_accounts', 3))
+
+    if AdminUser.query.filter_by(username=username).first():
+        flash('اسم المستخدم موجود مسبقاً')
+        return redirect(url_for('superadmin_panel'))
+
+    new_admin = AdminUser(username=username, password=password, max_accounts=max_accounts)
+    db.session.add(new_admin)
+    db.session.commit()
+    flash('تم إنشاء حساب إداري جديد')
+    return redirect(url_for('superadmin_panel'))
+
+# ===== Admin login & dashboard =====
+
+@app.route('/admin/login', methods=['GET','POST'])
+def admin_login():
+    if not session.get('captcha_verified'):
+        return redirect(url_for('security_challenge'))
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         user = AdminUser.query.filter_by(username=username).first()
         if user and user.password == password:
             login_user(user)
-            session['captcha_verified'] = True
-            session['username'] = username
             return redirect(url_for('admin_dashboard'))
         else:
-            flash('اسم المستخدم أو كلمة المرور خاطئة', 'error')
-            return redirect(url_for('bbngx_login'))
-    return render_template('bbngx_login.html')
-
-@app.route('/admin/logout')
-@login_required
-def admin_logout():
-    logout_user()
-    session.pop('captcha_verified', None)
-    session.pop('username', None)
-    flash('تم تسجيل الخروج', 'success')
-    return redirect(url_for('bbngx_login'))
+            flash("اسم المستخدم أو كلمة المرور خاطئة")
+            return redirect(url_for('admin_login'))
+    return render_template_string('''
+<html><head><title>دخول الأدمن</title></head><body style="background:#000;color:#0f0;font-family:monospace;text-align:center;">
+<h1>تسجيل دخول الأدمن</h1>
+<form method="POST">
+  <input name="username" placeholder="اسم المستخدم" required />
+  <input name="password" type="password" placeholder="كلمة المرور" required />
+  <button type="submit">دخول</button>
+</form>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <p style="color:red;">{{ messages[0] }}</p>
+  {% endif %}
+{% endwith %}
+</body></html>
+''')
 
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    username = current_user.username
-    max_accounts = current_user.max_accounts
-    owned_uids = user_bot_owners.get(username, [])
-    owned_accounts = [accounts[uid] for uid in owned_uids if uid in accounts]
-    return render_template('dashboard.html',
-                           bots=owned_accounts,
-                           max_accounts=max_accounts,
-                           current_count=len(owned_accounts),
-                           user=username)
+    if getattr(current_user, 'is_superadmin', False):
+        return redirect(url_for('superadmin_panel'))
+
+    bots = BotAccount.query.filter_by(owner_id=current_user.id).all()
+    return render_template_string('''
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8" />
+<title>لوحة تحكم الأدمن</title></head>
+<body style="background:#000;color:#0f0;font-family:monospace;padding:20px;">
+<h1>لوحة تحكم الأدمن</h1>
+<p>مرحباً، {{ current_user.username }} | <a href="{{ url_for('logout') }}" style="color:#f00;">تسجيل خروج</a></p>
+
+<h2>حسابات البوت المخصصة لك (الحد الأقصى: {{ max_accounts }})</h2>
+<table border="1" cellpadding="5" cellspacing="0" style="width:100%;color:#0f0;">
+  <tr><th>UID</th><th>كلمة المرور</th><th>إزالة</th></tr>
+  {% for bot in bots %}
+    <tr>
+      <td>{{ bot.uid }}</td>
+      <td>{{ bot.password }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('delete_bot', bot_id=bot.id) }}">
+          <button type="submit">حذف</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="3">لا يوجد حسابات بوت مضافة.</td></tr>
+  {% endfor %}
+</table>
+
+<h3>إضافة حساب بوت جديد</h3>
+<form method="POST" action="{{ url_for('add_bot') }}">
+  <label>UID:</label>
+  <input name="uid" required />
+  <label>كلمة المرور:</label>
+  <input name="password" required />
+  <button type="submit">إضافة</button>
+</form>
+</body>
+</html>
+''', bots=bots, max_accounts=current_user.max_accounts)
 
 @app.route('/admin/add_bot', methods=['POST'])
 @login_required
 def add_bot():
-    username = current_user.username
+    if getattr(current_user, 'is_superadmin', False):
+        return redirect(url_for('superadmin_panel'))
+
     uid = request.form.get('uid')
-    if uid not in accounts:
-        flash('الحساب غير موجود في accs.json')
+    password = request.form.get('password')
+
+    count = BotAccount.query.filter_by(owner_id=current_user.id).count()
+    if count >= current_user.max_accounts:
+        flash('وصلت للحد الأقصى من حسابات البوت')
         return redirect(url_for('admin_dashboard'))
-    owned_uids = user_bot_owners.get(username, [])
-    if len(owned_uids) >= current_user.max_accounts:
-        flash('وصلت للحد الأقصى لحسابات البوت')
+
+    if BotAccount.query.filter_by(uid=uid).first():
+        flash('الحساب موجود مسبقاً')
         return redirect(url_for('admin_dashboard'))
-    if uid in owned_uids:
-        flash('هذا الحساب مملوك لك مسبقاً')
-        return redirect(url_for('admin_dashboard'))
-    owned_uids.append(uid)
-    user_bot_owners[username] = owned_uids
-    save_user_bot_owners(user_bot_owners)
-    flash('تم إضافة الحساب بنجاح')
+
+    new_bot = BotAccount(uid=uid, password=password, owner_id=current_user.id)
+    db.session.add(new_bot)
+    db.session.commit()
+    flash('تم إضافة حساب بوت جديد')
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/delete_bot', methods=['POST'])
+@app.route('/admin/delete_bot/<int:bot_id>', methods=['POST'])
 @login_required
-def delete_bot():
-    username = current_user.username
-    uid = request.form.get('uid')
-    owned_uids = user_bot_owners.get(username, [])
-    if uid in owned_uids:
-        owned_uids.remove(uid)
-        user_bot_owners[username] = owned_uids
-        save_user_bot_owners(user_bot_owners)
-        flash('تم حذف الحساب بنجاح')
-    else:
-        flash('الحساب غير مملوك لك')
-    return redirect(url_for('admin_dashboard'))
-
-@app.route('/')
-@login_required
-def index():
-    return render_template('index.html')
-
-# البديل لـ before_first_request لتشغيل الكود مرة واحدة فقط
-def initial_setup():
-    db.create_all()
-    if not AdminUser.query.filter_by(username='admin').first():
-        admin = AdminUser(username='admin', password='adminpass', max_accounts=5)
-        db.session.add(admin)
+def delete_bot(bot_id):
+    bot = BotAccount.query.get(bot_id)
+    if bot and bot.owner_id == current_user.id:
+        db.session.delete(bot)
         db.session.commit()
+        flash('تم حذف حساب بوت')
+    else:
+        flash('ليس لديك صلاحية لحذف هذا الحساب')
+    return redirect(url_for('admin_dashboard'))
 
-def run_once():
-    if not hasattr(app, 'initial_setup_done'):
-        initial_setup()
-        app.initial_setup_done = True
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    session.pop('captcha_verified', None)
+    flash('تم تسجيل الخروج')
+    return redirect(url_for('admin_login'))
 
-@app.before_request
-def before_request_func():
-    run_once()
+@app.before_first_request
+def setup():
+    db.create_all()
+    if not SuperAdmin.query.filter_by(username='superadmin').first():
+        superadmin = SuperAdmin(username='superadmin', password='superpass')
+        db.session.add(superadmin)
+        db.session.commit()
 
 if __name__ == '__main__':
     app.run(debug=True)

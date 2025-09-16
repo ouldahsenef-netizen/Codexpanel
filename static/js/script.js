@@ -1,32 +1,33 @@
+// دالة مساعدة لعرض رسالة الحالة بأسفل خانة Creat Bot
+function showStatusMessage(message, success = true) {
+    const statusDiv = document.getElementById('bot-name-status');
+    statusDiv.textContent = message;
+    statusDiv.style.color = success ? "#3b82f6" /* ازرق كودكس */ : "#dc2626" /* أحمر */;
+}
+
 // حدث زر إنشاء الحساب
 document.getElementById('verify-your-bot').addEventListener('click', () => {
     const botNum = document.getElementById('bot-select').value;
     const botName = document.getElementById('bot-name').value.trim();
 
     if (!botNum) {
-        alert('يرجى اختيار رقم الحساب.');
+        showStatusMessage('يرجى اختيار رقم الحساب.', false);
         return;
     }
     if (!botName) {
-        alert('يرجى إدخال اسم البوت.');
+        showStatusMessage('يرجى إدخال اسم البوت.', false);
         return;
     }
 
     fetch('/create-acc', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            bot: botNum,
-            name: botName
-        })
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ bot: botNum, name: botName })
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
         if (data.message) {
-            alert(data.message);
-            // تحديث أسماء الحسابات المعروضة إذا رجع المحدث
+            showStatusMessage(data.message, data.message.includes('نجاح'));
             if(data.nicknames){
                 for (const [key, nickname] of Object.entries(data.nicknames)) {
                     const el = document.getElementById(`nick-${key}`);
@@ -34,57 +35,72 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
                 }
             }
         } else if (data.error) {
-            alert('خطأ: ' + data.error);
+            showStatusMessage('خطأ: ' + data.error, false);
         } else {
-            alert('رد غير متوقع');
+            showStatusMessage('رد غير متوقع', false);
         }
     })
-    .catch(error => {
-        alert('فشل الطلب: ' + error.message);
-    });
+    .catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
 });
 
-// اضافة وظائف أزرار إضافة وإزالة أصدقاء كما كان سابقًا
-
+// إضافة صديق
 document.getElementById('adding-friend').addEventListener('click', () => {
-    const bot = document.getElementById('bot-list-add').value;
-    const userId = document.getElementById('user-id').value.trim();
-    const days = document.getElementById('days').value.trim();
+    const botNum = document.getElementById('bot-list-add').value;
+    const friendUid = document.getElementById('user-id').value.trim();
 
-    if (!bot) {
-        alert('Please select a bot from YOUR BOT LIST.');
+    if (!botNum) {
+        showStatusMessage('يرجى اختيار رقم الحساب في إضافة صديق.', false);
         return;
     }
-    if (!userId) {
-        alert('Please enter a User ID.');
-        return;
-    }
-    if (!days) {
-        alert('Please enter number of days.');
+    if (!friendUid) {
+        showStatusMessage('يرجى إدخال معرف الصديق (UID).', false);
         return;
     }
 
-    console.log(`Adding friend: User ID=${userId}, Days=${days}, using Bot=${bot}`);
-
-    alert(`Sent request to add friend with User ID "${userId}" for ${days} days using bot "${bot}".`);
+    fetch('/add-friend', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ bot: botNum, friend_uid: friendUid })
+    }).then(res => res.json())
+    .then(data => {
+        if(data.message) {
+            showStatusMessage(data.message, data.message.includes('نجاح'));
+        } else if (data.error) {
+            showStatusMessage('خطأ: ' + data.error, false);
+        } else {
+            showStatusMessage('رد غير متوقع', false);
+        }
+    }).catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
 });
 
+// إزالة صديق
 document.getElementById('remove-friend').addEventListener('click', () => {
-    const bot = document.getElementById('bot-list-remove').value;
-    const friendId = document.getElementById('friend-player-id').value.trim();
+    const botNum = document.getElementById('bot-list-remove').value;
+    const friendUid = document.getElementById('friend-player-id').value.trim();
 
-    if (!bot) {
-        alert('Please select a bot from YOUR BOT LIST.');
+    if (!botNum) {
+        showStatusMessage('يرجى اختيار رقم الحساب في إزالة صديق.', false);
         return;
     }
-    if (!friendId) {
-        alert('Please enter a Player ID.');
+    if (!friendUid) {
+        showStatusMessage('يرجى إدخال معرف الصديق (UID).', false);
         return;
     }
 
-    console.log(`Removing friend: Player ID=${friendId} using Bot=${bot}`);
-
-    alert(`Sent request to remove friend with player ID "${friendId}" using bot "${bot}".`);
+    fetch('/remove-friend', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ bot: botNum, friend_uid: friendUid })
+    }).then(res => res.json())
+    .then(data => {
+        if(data.message) {
+            showStatusMessage(data.message, data.message.includes('نجاح'));
+        } else if (data.error) {
+            showStatusMessage('خطأ: ' + data.error, false);
+        } else {
+            showStatusMessage('رد غير متوقع', false);
+        }
+    }).catch(err => showStatusMessage('فشل الطلب: ' + err.message, false));
 });
 
 // إغلاق المودال

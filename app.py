@@ -2,19 +2,17 @@ from flask import Flask, request, jsonify, render_template, redirect, session, u
 import time
 import secrets
 import re
-import os
-import json
-from functools import wraps
-from collections import defaultdict
 import threading
 import requests
+from functools import wraps
+from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)  # ضروري لجلسات الفلاسك
 
 # -------- حسابات البوت --------
 accounts = {
-    "1": {"uid": 4168797974, "password": "FOX_FOX_KRNWAU4I", "nickname": ""},
+    "1": {"uid": 4168797983, "password": "FOX_FOX_OVY8LLH2", "nickname": ""},
     "2": {"uid": 4168796929, "password": "FOX_FOX_YMPSFPKD", "nickname": ""},
     "3": {"uid": 4168796924, "password": "FOX_FOX_9WASGXSJ", "nickname": ""},
 }
@@ -41,8 +39,12 @@ verification_sessions = {}
 failed_challenges = defaultdict(int)
 ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
-
 lock = threading.Lock()
+
+# بيانات دخول الأدمن - يمكن تغييرها لاحقا
+ADMIN_CREDENTIALS = {
+    "bn": "bn"
+}
 
 def get_client_ip():
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
@@ -77,7 +79,7 @@ def analyze_request_pattern(ip, endpoint, headers):
         essential_headers = ['Accept', 'Accept-Language', 'Accept-Encoding']
         missing_headers = sum(1 for h in essential_headers if h not in headers)
         suspicious_indicator += missing_headers
-        if not headers.get('Referer') and endpoint not in ['/', '/security/challenge']:
+        if not headers.get('Referer') and endpoint not in ['/', '/security/challenge', '/admin/login', '/admin/authenticate']:
             suspicious_indicator += 1
         if recent_requests > 15:
             suspicious_indicator += 2
@@ -89,16 +91,17 @@ def analyze_request_pattern(ip, endpoint, headers):
 def should_challenge_request(ip, user_agent, endpoint):
     if not S1X_PROTECTION_CONFIG['enabled']:
         return False
-    if ip in verification_sessions:
-        session = verification_sessions[ip]
-        session_duration = S1X_PROTECTION_CONFIG.get('session_timeout', 1800)
-        if session.get('captcha_verified', False) and (time.time() - session.get('verified_at', 0)) < session_duration:
+    session_data = verification_sessions.get(ip)
+    session_timeout = S1X_PROTECTION_CONFIG.get('session_timeout', 1800)
+    if session_data:
+        if session_data.get('captcha_verified', False) and (time.time() - session_data.get('verified_at', 0)) < session_timeout:
             return False
         else:
             verification_sessions.pop(ip, None)
     return True
 
 def verify_challenge_token(token, ip):
+    # يمكن اضافة تحقق متقدم لو أردت
     return True
 
 def protection_required(f):
@@ -119,6 +122,15 @@ def protection_required(f):
             else:
                 return redirect(url_for('security_challenge'))
         return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('admin_logged_in'):
+            return f(*args, **kwargs)
+        else:
+            return redirect(url_for('admin_login'))
     return decorated
 
 @app.route('/security/challenge')
@@ -159,7 +171,7 @@ def verify_human():
         verification_sessions[ip] = {
             'captcha_verified': True,
             'verified_at': time.time(),
-            'admin_logged_in': False
+            'admin_logged_in': False  # لم يُسجل دخول الأدمن بعد
         }
         failed_challenges.pop(ip, None)
         return jsonify({"success": True, "message": "Verification successful"})
@@ -169,14 +181,41 @@ def verify_human():
             return jsonify({"success": False, "message": "Exceeded max attempts. IP temporarily blocked."}), 403
         return jsonify({"success": False, "message": "Incorrect answer. Try again."}), 403
 
+@app.route('/admin/login')
+def admin_login():
+    # فقط ادخل لو تم التحقق من الكابتشا
+    ip = get_client_ip()
+    if not verification_sessions.get(ip, {}).get('captcha_verified'):
+        return redirect(url_for('security_challenge'))
+    return render_template('admin_login.html')
+
+@app.route('/admin/authenticate', methods=['POST'])
+def admin_authenticate():
+    ip = get_client_ip()
+    if not verification_sessions.get(ip, {}).get('captcha_verified'):
+        return jsonify({"success": False, "message": "يجب تجاوز التحقق الأمني أولاً"}), 403
+
+    data = request.json or {}
+    username = data.get('username')
+    password = data.get('password')
+    if username in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[username] == password:
+        session['admin_logged_in'] = True
+        session['admin_username'] = username
+        verification_sessions[ip]['admin_logged_in'] = True
+        return jsonify({"success": True, "session_id": secrets.token_hex(16)})
+    else:
+        return jsonify({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة"})
+
 @app.route('/')
 @protection_required
+@admin_required
 def index():
     nicknames = {k: v['nickname'] for k, v in accounts.items()}
     return render_template('index.html', nicknames=nicknames)
 
 @app.route('/api/create_account', methods=['POST'])
 @protection_required
+@admin_required
 def create_account():
     data = request.json or {}
     account_id = data.get('account_id')
@@ -216,24 +255,19 @@ def create_account():
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 
-
-
 @app.route('/api/add_friend', methods=['POST'])
 @protection_required
+@admin_required
 def add_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
 
-    app.logger.info(f"Received add_friend request with account_id={account_id}, friend_uid={friend_uid}")
-
     if not account_id or not friend_uid:
-        app.logger.warning("Missing account_id or friend_uid in add_friend request")
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
 
     account = accounts.get(account_id)
     if not account:
-        app.logger.warning(f"Account ID {account_id} not found in add_friend")
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
     uid = account['uid']
@@ -241,52 +275,39 @@ def add_friend():
 
     try:
         oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        app.logger.info(f"Requesting token from {oauth_url}")
         oauth_response = requests.get(oauth_url, timeout=5)
         oauth_response.raise_for_status()
         oauth_data = oauth_response.json()
-        app.logger.info(f"Token response: {oauth_data}")
-
         token = oauth_data.get('token')
         if not token:
-            app.logger.error("Token not found in OAuth response")
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
         add_url = ADD_URL_TEMPLATE.format(token=token, uid=friend_uid)
-        app.logger.info(f"Sending add friend request to {add_url}")
         add_response = requests.get(add_url, timeout=5)
         add_response.raise_for_status()
         add_data = add_response.json()
-        app.logger.info(f"Add friend response: {add_data}")
 
         if add_data.get('success', False):
-            app.logger.info("Add friend succeeded")
             return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح"})
         else:
             error_msg = add_data.get('message', "فشل في إضافة الصديق")
-            app.logger.error(f"Add friend failed: {error_msg}")
             return jsonify({"success": False, "message": error_msg})
     except Exception as e:
-        app.logger.exception("Exception during add_friend")
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
-
 
 @app.route('/api/remove_friend', methods=['POST'])
 @protection_required
+@admin_required
 def remove_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
 
-    app.logger.info(f"Received remove_friend request with account_id={account_id}, friend_uid={friend_uid}")
-
     if not account_id or not friend_uid:
-        app.logger.warning("Missing account_id or friend_uid in remove_friend request")
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID للصديق"}), 400
 
     account = accounts.get(account_id)
     if not account:
-        app.logger.warning(f"Account ID {account_id} not found in remove_friend")
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
     uid = account['uid']
@@ -294,36 +315,25 @@ def remove_friend():
 
     try:
         oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        app.logger.info(f"Requesting token from {oauth_url}")
         oauth_response = requests.get(oauth_url, timeout=5)
         oauth_response.raise_for_status()
         oauth_data = oauth_response.json()
-        app.logger.info(f"Token response: {oauth_data}")
-
         token = oauth_data.get('token')
         if not token:
-            app.logger.error("Token not found in OAuth response")
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
         remove_url = REMOVE_URL_TEMPLATE.format(token=token, uid=friend_uid)
-        app.logger.info(f"Sending remove friend request to {remove_url}")
         remove_response = requests.get(remove_url, timeout=5)
         remove_response.raise_for_status()
         remove_data = remove_response.json()
-        app.logger.info(f"Remove friend response: {remove_data}")
 
         if remove_data.get('success', False):
-            app.logger.info("Remove friend succeeded")
             return jsonify({"success": True, "message": "تم إزالة الصديق بنجاح"})
         else:
             error_msg = remove_data.get('message', "فشل في إزالة الصديق")
-            app.logger.error(f"Remove friend failed: {error_msg}")
             return jsonify({"success": False, "message": error_msg})
     except Exception as e:
-        app.logger.exception("Exception during remove_friend")
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)

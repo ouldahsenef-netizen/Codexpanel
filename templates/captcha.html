@@ -124,8 +124,8 @@
             if (res.ok && data.success) {
                 showMessage(data.message, false);
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
+                    window.location.href = '/admin/login';  // إعادة التوجيه لصفحة تسجيل دخول الأدمن
+                }, 1500);
             } else {
                 attempts++;
                 if(attempts >= maxAttempts){

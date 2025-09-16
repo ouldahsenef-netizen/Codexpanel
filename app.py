@@ -4,9 +4,9 @@ import requests
 app = Flask(__name__)
 
 accounts = {
-    "1": {"uid": 4168796916, "password": "FOX_FOX_FYPTO9IK", "nickname": ""},
-    "2": {"uid": 4168796926, "password": "FOX_FOX_RFC8FZGV", "nickname": ""},
-    "3": {"uid": 4168796933, "password": "FOX_FOX_BY8VI2JJ", "nickname": ""},
+    "1": {"uid": 4168796933, "password": "FOX_FOX_BY8VI2JJ", "nickname": ""},
+    "2": {"uid": 4168796929, "password": "FOX_FOX_YMPSFPKD", "nickname": ""},
+    "3": {"uid": 4168796924, "password": "FOX_FOX_9WASGXSJ", "nickname": ""},
 }
 
 ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"

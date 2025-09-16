@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>لوحة تحكم BBNGX</title>
+<style>
+  body {
+    font-family: monospace, 'Fira Code';
+    background: #000;
+    color: #0f0;
+    padding: 20px;
+  }
+  h1, h2 {
+    color: #0f0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border: 1px solid #0f0;
+    padding: 8px;
+    text-align: center;
+  }
+  input[type=text] {
+    background: #111;
+    border: 1px solid #0f0;
+    color: #0f0;
+    padding: 6px 10px;
+    width: 200px;
+  }
+  button {
+    background: linear-gradient(45deg, #00ff41, #ff0080);
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #000;
+    font-size: 16px;
+  }
+  .max-accounts {
+    margin-bottom: 20px;
+  }
+  a.logout-link {
+    color: #ff0040;
+    text-decoration: none;
+    font-weight: bold;
+    float: right;
+  }
+</style>
+</head>
+<body>
+    <a href="{{ url_for('admin_logout') }}" class="logout-link">تسجيل خروج</a>
+    <h1>مرحباً {{ user }}</h1>
+    <h2>عدد حسابات البوت الحالية: {{ current_count }} / {{ max_accounts }}</h2>
+
+    <h3>حسابات البوت الخاصة بك</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>UID</th>
+                <th>كلمة المرور</th>
+                <th>إزالة</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bot in bots %}
+            <tr>
+                <td>{{ bot.name }}</td>
+                <td>{{ bot.uid }}</td>
+                <td>{{ bot.password }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('delete_bot') }}">
+                        <input type="hidden" name="uid" value="{{ bot.uid }}" />
+                        <button type="submit">حذف</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">لا يوجد حسابات مضافة</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>إضافة حساب بوت جديد</h3>
+    <form method="post" action="{{ url_for('add_bot') }}">
+        <label>اختر حساب بوت من القائمة أو أدخل UID</label><br>
+        <input type="text" name="uid" placeholder="اكتب UID" required />
+        <button type="submit">إضافة</button>
+    </form>
+
+</body>
+</html>

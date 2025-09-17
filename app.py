@@ -228,6 +228,7 @@ def create_account():
     password = account['password']
 
     try:
+        # طلب التوكن من الخدمة الخارجية
         oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
         oauth_response = requests.get(oauth_url, timeout=5)
         oauth_response.raise_for_status()
@@ -237,6 +238,7 @@ def create_account():
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
 
+        # طلب تغيير الاسم باستخدام التوكن والاسم الجديد
         change_nick_url = f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}"
         nick_response = requests.get(change_nick_url, timeout=5)
         nick_response.raise_for_status()

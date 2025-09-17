@@ -11,10 +11,8 @@ from db import create_accounts_table, get_all_accounts, get_account_by_id, updat
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
-# إنشاء جدول الحسابات عند بداية تشغيل التطبيق
 create_accounts_table()
 
-# إعداد الحماية
 S1X_PROTECTION_CONFIG = {
     'enabled': True,
     'max_attempts': 3,
@@ -33,6 +31,7 @@ verification_sessions = {}
 failed_challenges = defaultdict(int)
 ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
+challenge_store = {}
 lock = threading.Lock()
 
 ADMIN_CREDENTIALS = {
@@ -94,7 +93,7 @@ def should_challenge_request(ip, user_agent, endpoint):
     return True
 
 def verify_challenge_token(token, ip):
-    # في هذا المثال نتجاهل التحقق الفعلي من التوكن، يمكن تطبيق تحقق مناسب
+    # بسيط الآن، يمكن تطوير بناءً على توكنيزيشن لاحقاً
     return True
 
 def protection_required(f):
@@ -104,7 +103,6 @@ def protection_required(f):
         ua = request.headers.get('User-Agent', '')
         endpoint = request.path
         analysis = analyze_request_pattern(ip, endpoint, request.headers)
-
         if analysis == 'ddos_detected':
             return jsonify({"success": False, "error": "DDoS protection activated"}), 429
         if analysis == 'suspicious_activity' or should_challenge_request(ip, ua, endpoint):
@@ -126,9 +124,7 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
     return decorated
 
-@app.route('/security/challenge')
-def security_challenge():
-    # نعرض كابتشا رياضي بسيط (جمع أو طرح)
+def generate_captcha_challenge(ip):
     import random
     operations = ['+', '-']
     op = random.choice(operations)
@@ -138,35 +134,49 @@ def security_challenge():
     else:
         n1, n2 = random.randint(20, 70), random.randint(1, 20)
         answer = n1 - n2
-    question = f"{n1} {op} {n2} = ?"
-    session['captcha_answer'] = answer
-    return render_template('captcha.html', question=question)
+    question = f"{n1} {op} {n2}"
+    challenge_store[ip] = {'answer': answer, 'timestamp': time.time()}
+    return question
+
+@app.route('/api/security/generate-challenge')
+def generate_challenge():
+    ip = get_client_ip()
+    question = generate_captcha_challenge(ip)
+    return jsonify({"question": question})
 
 @app.route('/api/security/verify-human', methods=['POST'])
 def verify_human():
     ip = get_client_ip()
     data = request.json or {}
     user_answer = data.get('answer')
-    if user_answer is None or session.get('captcha_answer') is None:
-        return jsonify({"success": False, "message": "Invalid challenge data"}), 400
+    if user_answer is None:
+        return jsonify({"success": False, "message": "الرجاء إدخال الإجابة"}), 400
     try:
         user_answer = int(user_answer)
-    except:
-        return jsonify({"success": False, "message": "Answer must be a number"}), 400
-    correct_answer = session.get('captcha_answer')
-    if user_answer == correct_answer:
+    except ValueError:
+        return jsonify({"success": False, "message": "الإجابة يجب أن تكون رقم"}), 400
+    
+    stored_challenge = challenge_store.get(ip)
+    if not stored_challenge:
+        return jsonify({"success": False, "message": "التحدي غير موجود، الرجاء إعادة تحميل الصفحة"}), 400
+
+    if user_answer == stored_challenge['answer']:
         verification_sessions[ip] = {
             'captcha_verified': True,
             'verified_at': time.time(),
-            'admin_logged_in': False
         }
-        failed_challenges.pop(ip, None)
-        return jsonify({"success": True, "message": "Verification successful"})
+        challenge_store.pop(ip, None)
+        return jsonify({"success": True, "message": "تم التحقق بنجاح"})
     else:
         failed_challenges[ip] += 1
         if failed_challenges[ip] >= S1X_PROTECTION_CONFIG['max_attempts']:
-            return jsonify({"success": False, "message": "Exceeded max attempts. IP temporarily blocked."}), 403
-        return jsonify({"success": False, "message": "Incorrect answer. Try again."}), 403
+            return jsonify({"success": False, "message": "تجاوزت عدد المحاولات المسموح به. سيتم حظرك مؤقتًا."}), 403
+        return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
+
+@app.route('/security/challenge')
+def security_challenge():
+    # يعرض صفحة الكابتشا مع تحميل AJAX عبر /api/security/generate-challenge
+    return render_template('captcha.html')
 
 @app.route('/admin/login')
 def admin_login():
@@ -248,12 +258,12 @@ def add_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
-    days = data.get('days', None)
+    days = data.get('days', None)  # القيمة الجديدة
 
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
 
-    account = get_account_by_id(account_id)
+    account = accounts.get(account_id)
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -269,12 +279,13 @@ def add_friend():
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        add_url = f"https://add-friend-weld.vercel.app/add_friend?token={token}&uid={friend_uid}"
+        add_url = ADD_URL_TEMPLATE.format(token=token, uid=friend_uid)
         add_response = requests.get(add_url, timeout=5)
         add_response.raise_for_status()
         add_data = add_response.json()
 
         if add_data.get('success', False):
+            # إذا كانت قيمة الأيام موجودة، نرسل طلب إضافي لل API الخارجي
             if days is not None:
                 try:
                     api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"
@@ -306,7 +317,7 @@ def remove_friend():
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID للصديق"}), 400
 
-    account = get_account_by_id(account_id)
+    account = accounts.get(account_id)
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -322,7 +333,7 @@ def remove_friend():
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        remove_url = f"https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={friend_uid}"
+        remove_url = REMOVE_URL_TEMPLATE.format(token=token, uid=friend_uid)
         remove_response = requests.get(remove_url, timeout=5)
         remove_response.raise_for_status()
         remove_data = remove_response.json()

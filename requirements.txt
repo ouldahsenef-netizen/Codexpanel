@@ -8,4 +8,5 @@ Jinja2>=3.1.2
 gunicorn
 flask_sqlalchemy
 flask_login
+psycopg2-binary
 

@@ -7,6 +7,7 @@ import requests
 from functools import wraps
 from collections import defaultdict
 from db import create_accounts_table, get_all_accounts, get_account_by_id, update_account_nickname, add_account
+import random
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
@@ -31,7 +32,6 @@ verification_sessions = {}
 failed_challenges = defaultdict(int)
 ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
-challenge_store = {}
 lock = threading.Lock()
 
 ADMIN_CREDENTIALS = {
@@ -124,10 +124,7 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
     return decorated
 
-from flask import session
-
 def generate_captcha_challenge():
-    import random
     operations = ['+', '-']
     op = random.choice(operations)
     if op == '+':
@@ -140,11 +137,9 @@ def generate_captcha_challenge():
     session['captcha_answer'] = answer
     return question
 
-
 @app.route('/api/security/generate-challenge')
 def generate_challenge():
-    ip = get_client_ip()
-    question = generate_captcha_challenge(ip)
+    question = generate_captcha_challenge()
     return jsonify({"question": question})
 
 @app.route('/api/security/verify-human', methods=['POST'])
@@ -169,8 +164,8 @@ def verify_human():
             'captcha_verified': True,
             'verified_at': time.time(),
         }
-        session.pop('captcha_answer', None)  # حذف السؤال بعد النجاح
-        failed_challenges[ip] = 0  # إعادة تعيين المحاولات الفاشلة
+        session.pop('captcha_answer', None)
+        failed_challenges[ip] = 0
         return jsonify({"success": True, "message": "تم التحقق بنجاح"})
     else:
         failed_challenges[ip] += 1
@@ -179,12 +174,9 @@ def verify_human():
         else:
             return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
 
-
-@app.route('/api/security/generate-challenge')
-def generate_challenge():
-    question = generate_captcha_challenge()
-    return jsonify({"question": question})
-
+@app.route('/security/challenge')
+def security_challenge():
+    return render_template('captcha.html')
 
 @app.route('/admin/login')
 def admin_login():

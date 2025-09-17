@@ -263,7 +263,8 @@ def add_friend():
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
 
-    account = accounts.get(account_id)
+    accounts = {str(acc['id']): acc for acc in get_all_accounts()}
+    account = accounts.get(str(account_id))
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -285,7 +286,6 @@ def add_friend():
         add_data = add_response.json()
 
         if add_data.get('success', False):
-            # إذا كانت قيمة الأيام موجودة، نرسل طلب إضافي لل API الخارجي
             if days is not None:
                 try:
                     api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"

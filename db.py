@@ -2,13 +2,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 def get_db_connection():
-    conn = psycopg2.connect(
-        database="bngx",
-        user="bngx_user",
-        password="XqYueLZSWajZCbBLHZ6WkOpJxFKZi0bZ",
-        host="dpg-d34rj956ubrc73cm6mu0-a",
-        port="5432"
-    )
+    DATABASE_URL = "postgresql://bngx_user:XqYueLZSWajZCbBLHZ6WkOpJxFKZi0bZ@dpg-d34rj956ubrc73cm6mu0-a.oregon-postgres.render.com:5432/bngx"
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     return conn
 
 def create_accounts_table():
@@ -19,7 +14,7 @@ def create_accounts_table():
             id SERIAL PRIMARY KEY,
             uid BIGINT UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
-            nickname VARCHAR(255)
+            nickname VARCHAR(255) DEFAULT ''
         );
     ''')
     conn.commit()
@@ -52,10 +47,10 @@ def update_account_nickname(account_id, nickname):
     cur.close()
     conn.close()
 
-def add_account(uid, password, nickname):
+def add_account(uid, password, nickname=''):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO accounts (uid, password, nickname) VALUES (%s, %s, %s);',
+    cur.execute('INSERT INTO accounts (uid, password, nickname) VALUES (%s, %s, %s) ON CONFLICT (uid) DO NOTHING;',
                 (uid, password, nickname))
     conn.commit()
     cur.close()

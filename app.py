@@ -43,7 +43,7 @@ lock = threading.Lock()
 
 # بيانات دخول الأدمن - يمكن تغييرها لاحقا
 ADMIN_CREDENTIALS = {
-    "bn": "bn"
+    "bnnn": "bnnn"
 }
 
 def get_client_ip():

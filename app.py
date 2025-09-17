@@ -321,7 +321,8 @@ def remove_friend():
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID للصديق"}), 400
 
-    account = accounts.get(account_id)
+    accounts = {str(acc['id']): acc for acc in get_all_accounts()}
+    account = accounts.get(str(account_id))
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 

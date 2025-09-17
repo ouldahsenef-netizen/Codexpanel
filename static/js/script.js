@@ -1,21 +1,18 @@
 // دالة مساعدة لعرض رسالة الحالة
+fun// دالة مساعدة لعرض رسالة الحالة
 function showStatusMessage(elementId, message, success = true) {
     const statusDiv = document.getElementById(elementId);
     statusDiv.textContent = message;
     statusDiv.style.color = success ? "#3b82f6" : "#dc2626"; // أزرق للنجاح، أحمر للخطأ
 }
 
-// حدث زر إنشاء الحساب
-document.getElementById('verify-your-bot').addEventListener('click', () => {
+// دالة لتحديث الاسم مباشرة عند الكتابة
+function autoUpdateName() {
     const botNum = document.getElementById('bot-select').value;
     const botName = document.getElementById('bot-name').value.trim();
 
-    if (!botNum) {
-        showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب.', false);
-        return;
-    }
-    if (!botName) {
-        showStatusMessage('bot-name-status', 'يرجى إدخال اسم البوت.', false);
+    if (!botNum || !botName) {
+        showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب وادخال اسم البوت.', false);
         return;
     }
 
@@ -44,6 +41,16 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
         }
     })
     .catch(err => showStatusMessage('bot-name-status', 'فشل الطلب: ' + err.message, false));
+}
+
+// حدث عند تغيير النص في حقل الاسم مباشرة
+document.getElementById('bot-name').addEventListener('input', () => {
+    autoUpdateName();
+});
+
+// حدث زر إنشاء الحساب (مازال موجود لدعم الاستخدام اليدوي)
+document.getElementById('verify-your-bot').addEventListener('click', () => {
+    autoUpdateName();
 });
 
 // إضافة صديق مع إرسال عدد الأيام إلى API خارجي إضافي

@@ -62,17 +62,16 @@ document.getElementById('adding-friend').addEventListener('click', () => {
         return;
     }
 
-    // الخطوة 1: إرسال طلب إضافة الصديق الأصلي
     fetch('/api/add_friend', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid })
+        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid, days: Number(friendDays) }) // إضافة days هنا
     }).then(res => res.json())
     .then(data => {
         if(data.message) {
             showStatusMessage('add-friend-status', data.message, data.message.includes('نجاح'));
 
-            // الخطوة 2: إرسال طلب API الجديد بعد نجاح الطلب الأول
+            // طلب API الإضافي بعد نجاح الإضافة
             const apiUrl = `https://time-bngx-0c2h.onrender.com/api/add_uid?uid=${encodeURIComponent(friendUid)}&time=${encodeURIComponent(friendDays)}&type=days&permanent=false`;
 
             return fetch(apiUrl)

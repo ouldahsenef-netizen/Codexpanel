@@ -124,7 +124,9 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
     return decorated
 
-def generate_captcha_challenge(ip):
+from flask import session
+
+def generate_captcha_challenge():
     import random
     operations = ['+', '-']
     op = random.choice(operations)
@@ -135,8 +137,9 @@ def generate_captcha_challenge(ip):
         n1, n2 = random.randint(20, 70), random.randint(1, 20)
         answer = n1 - n2
     question = f"{n1} {op} {n2}"
-    challenge_store[ip] = {'answer': answer, 'timestamp': time.time()}
+    session['captcha_answer'] = answer
     return question
+
 
 @app.route('/api/security/generate-challenge')
 def generate_challenge():
@@ -146,37 +149,42 @@ def generate_challenge():
 
 @app.route('/api/security/verify-human', methods=['POST'])
 def verify_human():
-    ip = get_client_ip()
-    data = request.json or {}
-    user_answer = data.get('answer')
+    user_answer = request.json.get('answer')
     if user_answer is None:
         return jsonify({"success": False, "message": "الرجاء إدخال الإجابة"}), 400
+    
     try:
         user_answer = int(user_answer)
     except ValueError:
         return jsonify({"success": False, "message": "الإجابة يجب أن تكون رقم"}), 400
     
-    stored_challenge = challenge_store.get(ip)
-    if not stored_challenge:
+    stored_answer = session.get('captcha_answer')
+    if stored_answer is None:
         return jsonify({"success": False, "message": "التحدي غير موجود، الرجاء إعادة تحميل الصفحة"}), 400
-
-    if user_answer == stored_challenge['answer']:
+    
+    ip = get_client_ip()
+    
+    if user_answer == stored_answer:
         verification_sessions[ip] = {
             'captcha_verified': True,
             'verified_at': time.time(),
         }
-        challenge_store.pop(ip, None)
+        session.pop('captcha_answer', None)  # حذف السؤال بعد النجاح
+        failed_challenges[ip] = 0  # إعادة تعيين المحاولات الفاشلة
         return jsonify({"success": True, "message": "تم التحقق بنجاح"})
     else:
         failed_challenges[ip] += 1
         if failed_challenges[ip] >= S1X_PROTECTION_CONFIG['max_attempts']:
             return jsonify({"success": False, "message": "تجاوزت عدد المحاولات المسموح به. سيتم حظرك مؤقتًا."}), 403
-        return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
+        else:
+            return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
 
-@app.route('/security/challenge')
-def security_challenge():
-    # يعرض صفحة الكابتشا مع تحميل AJAX عبر /api/security/generate-challenge
-    return render_template('captcha.html')
+
+@app.route('/api/security/generate-challenge')
+def generate_challenge():
+    question = generate_captcha_challenge()
+    return jsonify({"question": question})
+
 
 @app.route('/admin/login')
 def admin_login():

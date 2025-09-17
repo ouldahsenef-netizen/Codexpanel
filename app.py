@@ -6,28 +6,22 @@ import threading
 import requests
 from functools import wraps
 from collections import defaultdict
+from db import create_tables, get_all_accounts, get_account_by_id, update_account_nickname, add_account
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)  # ضروري لجلسات الفلاسك
+app.secret_key = secrets.token_hex(32)
 
-# -------- حسابات البوت --------
-accounts = {
-    "1": {"uid": 4168797217, "password": "FOX_FOX_UV5YYYBY", "nickname": ""},
-    "2": {"uid": 4168797227, "password": "FOX_FOX_ARXX6TZ9", "nickname": ""},
-    "3": {"uid": 4168797228, "password": "FOX_FOX_KNHHC5FK", "nickname": ""},
-}
-
-ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
-REMOVE_URL_TEMPLATE = "https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={uid}"
+# إعداد الجدول عند بداية التطبيق
+create_tables()
 
 # -------- إعدادات الحماية --------
 S1X_PROTECTION_CONFIG = {
     'enabled': True,
     'max_attempts': 3,
-    'block_duration': 15,  # دقائق
+    'block_duration': 15,
     'challenge_timeout': 300,
     'ddos_threshold': 10,
-    'session_timeout': 1800,  # صلاحية الجلسة 30 دقيقة
+    'session_timeout': 1800,
     'suspicious_patterns': [
         r'bot', r'crawler', r'spider', r'scraper', r'curl', r'wget',
         r'python', r'java', r'php', r'perl', r'ruby', r'node',
@@ -41,7 +35,6 @@ ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
 lock = threading.Lock()
 
-# بيانات دخول الأدمن - يمكن تغييرها لاحقا
 ADMIN_CREDENTIALS = {
     "bnnn": "bnnn"
 }
@@ -101,7 +94,6 @@ def should_challenge_request(ip, user_agent, endpoint):
     return True
 
 def verify_challenge_token(token, ip):
-    # يمكن اضافة تحقق متقدم لو أردت
     return True
 
 def protection_required(f):
@@ -171,7 +163,7 @@ def verify_human():
         verification_sessions[ip] = {
             'captcha_verified': True,
             'verified_at': time.time(),
-            'admin_logged_in': False  # لم يُسجل دخول الأدمن بعد
+            'admin_logged_in': False
         }
         failed_challenges.pop(ip, None)
         return jsonify({"success": True, "message": "Verification successful"})
@@ -183,7 +175,6 @@ def verify_human():
 
 @app.route('/admin/login')
 def admin_login():
-    # فقط ادخل لو تم التحقق من الكابتشا
     ip = get_client_ip()
     if not verification_sessions.get(ip, {}).get('captcha_verified'):
         return redirect(url_for('security_challenge'))
@@ -210,7 +201,8 @@ def admin_authenticate():
 @protection_required
 @admin_required
 def index():
-    nicknames = {k: v['nickname'] for k, v in accounts.items()}
+    accounts = get_all_accounts()
+    nicknames = {str(acc['id']): acc['nickname'] for acc in accounts}
     return render_template('index.html', nicknames=nicknames)
 
 @app.route('/api/create_account', methods=['POST'])
@@ -220,11 +212,10 @@ def create_account():
     data = request.json or {}
     account_id = data.get('account_id')
     nickname = data.get('nickname')
-
     if not account_id or not nickname:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
 
-    account = accounts.get(account_id)
+    account = get_account_by_id(account_id)
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -247,7 +238,7 @@ def create_account():
         nick_data = nick_response.json()
 
         if nick_data.get('success', False):
-            accounts[account_id]['nickname'] = nickname
+            update_account_nickname(account_id, nickname)
             return jsonify({"success": True, "message": "تم تغيير الاسم بنجاح"}), 200
         else:
             error_msg = nick_data.get('message', "تم تغيير الاسم بنجاح")
@@ -262,12 +253,12 @@ def add_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
-    days = data.get('days', None)  # القيمة الجديدة
+    days = data.get('days', None)
 
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
 
-    account = accounts.get(account_id)
+    account = get_account_by_id(account_id)
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -283,13 +274,12 @@ def add_friend():
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        add_url = ADD_URL_TEMPLATE.format(token=token, uid=friend_uid)
+        add_url = f"https://add-friend-weld.vercel.app/add_friend?token={token}&uid={friend_uid}"
         add_response = requests.get(add_url, timeout=5)
         add_response.raise_for_status()
         add_data = add_response.json()
 
         if add_data.get('success', False):
-            # إذا كانت قيمة الأيام موجودة، نرسل طلب إضافي لل API الخارجي
             if days is not None:
                 try:
                     api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"
@@ -321,7 +311,7 @@ def remove_friend():
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID للصديق"}), 400
 
-    account = accounts.get(account_id)
+    account = get_account_by_id(account_id)
     if not account:
         return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
 
@@ -337,7 +327,7 @@ def remove_friend():
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        remove_url = REMOVE_URL_TEMPLATE.format(token=token, uid=friend_uid)
+        remove_url = f"https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={friend_uid}"
         remove_response = requests.get(remove_url, timeout=5)
         remove_response.raise_for_status()
         remove_data = remove_response.json()
@@ -349,6 +339,7 @@ def remove_friend():
             return jsonify({"success": False, "message": error_msg})
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)

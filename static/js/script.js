@@ -21,21 +21,24 @@ document.getElementById('verify-your-bot').addEventListener('click', () => {
 
     fetch('/api/create_account', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ account_id: botNum, nickname: botName })
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(err => {throw new Error(err.message || "خطأ في الخادم")});
+        }
+        return res.json();
+    })
     .then(data => {
         if (data.message) {
-            showStatusMessage('bot-name-status', data.message, data.message.includes('نجاح'));
+            showStatusMessage('bot-name-status', data.message, data.success);
             if(data.nicknames){
                 for (const [key, nickname] of Object.entries(data.nicknames)) {
                     const el = document.getElementById(`nick-${key}`);
                     if(el) el.textContent = nickname || "(فارغ)";
                 }
             }
-        } else if (data.error) {
-            showStatusMessage('bot-name-status', 'خطأ: ' + data.error, false);
         } else {
             showStatusMessage('bot-name-status', 'رد غير متوقع', false);
         }
@@ -64,14 +67,14 @@ document.getElementById('adding-friend').addEventListener('click', () => {
 
     fetch('/api/add_friend', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid, days: Number(friendDays) }) // إضافة days هنا
-    }).then(res => res.json())
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ account_id: botNum, friend_uid: friendUid, days: Number(friendDays) })
+    })
+    .then(res => res.json())
     .then(data => {
         if(data.message) {
             showStatusMessage('add-friend-status', data.message, data.message.includes('نجاح'));
 
-            // طلب API الإضافي بعد نجاح الإضافة
             const apiUrl = `https://time-bngx-0c2h.onrender.com/api/add_uid?uid=${encodeURIComponent(friendUid)}&time=${encodeURIComponent(friendDays)}&type=days&permanent=false`;
 
             return fetch(apiUrl)
@@ -110,9 +113,10 @@ document.getElementById('remove-friend').addEventListener('click', () => {
 
     fetch('/api/remove_friend', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ account_id: botNum, friend_uid: friendUid })
-    }).then(res => res.json())
+    })
+    .then(res => res.json())
     .then(data => {
         if(data.message) {
             showStatusMessage('remove-friend-status', data.message, data.message.includes('نجاح'));

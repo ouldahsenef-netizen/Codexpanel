@@ -2,7 +2,7 @@
 function showStatusMessage(elementId, message, success = true) {
     const statusDiv = document.getElementById(elementId);
     statusDiv.textContent = message;
-    statusDiv.style.color = success ? "#3b82f6" : "#dc2626";
+    statusDiv.style.color = success ? "#3b82f6" : "#dc2626"; // أزرق للنجاح، أحمر للخطأ
 }
 
 // حدث زر إنشاء الحساب

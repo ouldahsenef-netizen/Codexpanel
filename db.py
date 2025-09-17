@@ -1,8 +1,10 @@
+import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+DATABASE_URL = "postgresql://bngx_user:XqYueLZSWajZCbBLHZ6WkOpJxFKZi0bZ@dpg-d34rj956ubrc73cm6mu0-a.oregon-postgres.render.com:5432/bngx"
+
 def get_db_connection():
-    DATABASE_URL = "postgresql://bngx_user:XqYueLZSWajZCbBLHZ6WkOpJxFKZi0bZ@dpg-d34rj956ubrc73cm6mu0-a.oregon-postgres.render.com:5432/bngx"
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     return conn
 
@@ -55,3 +57,22 @@ def add_account(uid, password, nickname=''):
     conn.commit()
     cur.close()
     conn.close()
+
+# دالة جديدة لقراءة ملف JSON وادخال حساباته
+def insert_accounts_from_json(json_file_path):
+    with open(json_file_path, 'r') as f:
+        accounts_list = json.load(f)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    for account in accounts_list:
+        uid, password = account
+        cur.execute("""
+            INSERT INTO accounts (uid, password, nickname)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (uid) DO NOTHING;
+        """, (int(uid), password, ''))
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(f"تم إدخال حسابات من {json_file_path} إلى قاعدة البيانات.")

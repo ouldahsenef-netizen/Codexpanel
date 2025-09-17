@@ -251,6 +251,10 @@ def create_account():
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 
+# تعريف الرابط للنماذج الخارجية
+ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
+REMOVE_URL_TEMPLATE = "https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={uid}"
+# مكان دالة add_friend
 @app.route('/api/add_friend', methods=['POST'])
 @protection_required
 @admin_required

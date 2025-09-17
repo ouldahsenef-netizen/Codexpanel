@@ -1,38 +1,165 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>التحقق الأمني - كابتشا</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🖕 CODEX Security Verification</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00ff41;
+            font-family: 'Fira Code', monospace;
+            text-align: center;
+            padding: 40px;
+        }
+        .challenge-box {
+            background: #111;
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            display: inline-block;
+            padding: 30px 40px;
+            margin-top: 50px;
+            max-width: 400px;
+        }
+        input.challenge-input {
+            width: 100%;
+            font-size: 18px;
+            padding: 15px;
+            margin-top: 15px;
+            background: #000;
+            color: #0f0;
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            text-align: center;
+        }
+        button.verify-btn {
+            margin-top: 20px;
+            width: 100%;
+            font-size: 18px;
+            padding: 15px;
+            background: linear-gradient(45deg, #00ff41, #ff0080);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button.verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .error-message {
+            margin-top: 20px;
+            color: #ff0080;
+            font-weight: bold;
+        }
+        .success-message {
+            margin-top: 20px;
+            color: #00ff41;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-  <h2>لإكمال العملية يرجى حل العملية الحسابية التالية:</h2>
-  <form action="/api/security/verify-human" method="post" onsubmit="return submitCaptcha(event)">
-    <p>{{ question }}</p>
-    <input type="number" id="answer" name="answer" required />
-    <button type="submit">تأكيد</button>
-  </form>
-  <p id="result"></p>
-  <script>
-    async function submitCaptcha(event) {
-      event.preventDefault();
-      const answer = document.getElementById('answer').value;
-      const response = await fetch('/api/security/verify-human', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answer }),
-      });
-      const data = await response.json();
-      const resultEl = document.getElementById('result');
-      if (data.success) {
-        resultEl.textContent = data.message + ', سيتم تحويلك الآن...';
-        setTimeout(() => {
-          window.location.href = '/admin/login';
-        }, 1500);
-      } else {
-        resultEl.textContent = 'خطأ: ' + data.message;
-      }
-      return false;
+    <h1>🖕 CODEX Advanced Security System</h1>
+    <div class="challenge-box">
+        <div id="challenge-question" style="font-size: 22px; font-weight: bold;">تحميل السؤال...</div>
+        <input type="number" id="answer-input" class="challenge-input" placeholder="أدخل الإجابة هنا..." />
+        <button id="verify-btn" class="verify-btn">تحقق</button>
+        <div id="message" class="error-message" style="display:none;"></div>
+    </div>
+
+<script>
+    const verifyBtn = document.getElementById('verify-btn');
+    const answerInput = document.getElementById('answer-input');
+    const messageDiv = document.getElementById('message');
+    const questionDiv = document.getElementById('challenge-question');
+
+    let question = "";
+    let attempts = 0;
+    const maxAttempts = 3;
+    let userAgent = navigator.userAgent;
+
+    async function loadChallenge() {
+        try {
+            const res = await fetch('/api/security/generate-challenge');
+            if (res.ok) {
+                const data = await res.json();
+                question = data.question;
+                questionDiv.textContent = `حل المعادلة: ${question}`;
+                answerInput.value = "";
+                messageDiv.style.display = "none";
+                verifyBtn.disabled = false;
+            } else {
+                questionDiv.textContent = "حدث خطأ في تحميل السؤال.";
+                verifyBtn.disabled = true;
+            }
+        } catch {
+            questionDiv.textContent = "فشل في تحميل السؤال.";
+            verifyBtn.disabled = true;
+        }
     }
-  </script>
+
+    async function verifyAnswer() {
+        let answer = answerInput.value.trim();
+        if (answer === "") {
+            showMessage("الرجاء إدخال الإجابة", true);
+            return;
+        }
+        verifyBtn.disabled = true;
+
+        try {
+            const res = await fetch('/api/security/verify-human', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    answer: answer,
+                    user_agent: userAgent,
+                    attempts: attempts
+                })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showMessage(data.message, false);
+                setTimeout(() => {
+                    window.location.href = '/admin/login';  // إعادة التوجيه لصفحة تسجيل دخول الأدمن
+                }, 1500);
+            } else {
+                attempts++;
+                if(attempts >= maxAttempts){
+                    showMessage("تجاوزت عدد المحاولات المسموح به. سيتم حظرك مؤقتًا.", true);
+                    verifyBtn.disabled = true;
+                    setTimeout(() => {
+                        window.location.href = '/security/blocked';
+                    }, 3000);
+                } else {
+                    showMessage(data.message || "الإجابة غير صحيحة، حاول مجددًا.", true);
+                    await loadChallenge();
+                }
+            }
+        } catch {
+            showMessage("حدث خطأ دراسي أثناء التحقق. حاول لاحقًا.", true);
+        } finally {
+            verifyBtn.disabled = false;
+        }
+    }
+
+    function showMessage(msg, isError) {
+        messageDiv.textContent = msg;
+        messageDiv.style.color = isError ? '#ff0040' : '#00ff41';
+        messageDiv.style.display = 'block';
+    }
+
+    verifyBtn.addEventListener('click', verifyAnswer);
+    answerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            verifyAnswer();
+        }
+    });
+
+    loadChallenge();
+</script>
 </body>
 </html>

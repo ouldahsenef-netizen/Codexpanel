@@ -1,386 +1,162 @@
-تي برا امشي نيك اا ولد لقحبة 😂🤣😂
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>🖕 CODEX ADMIN ACCESS</title>
-    <style>
-        * {margin: 0; padding: 0; box-sizing: border-box;}
-        body {
-            background: #000;
-            color: #00ff41;
-            font-family: 'Fira Code', monospace;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            flex-direction: column;
-        }
-        .challenge-box, .login-container {
-            background: rgba(0,0,0,0.95);
-            border: 2px solid #00ff41;
-            border-radius: 10px;
-            padding: 30px 40px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 0 30px rgba(0,255,65,0.3);
-            animation: glow 2s ease-in-out infinite alternate;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        @keyframes glow {
-            from { box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);}
-            to { box-shadow: 0 0 50px rgba(0, 255, 65, 0.6);}
-        }
-        .login-title, .challenge-title {
-            font-size: 24px;
-            margin-bottom: 30px;
-            text-shadow: 0 0 10px #00ff41;
-        }
-        .skull-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0%,100% {opacity:1;}
-            50% {opacity:0.5;}
-        }
-        .form-group {
-            margin-bottom: 20px;
-            text-align: right;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #00ff41;
-            border-radius: 5px;
-            color: #00ff41;
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-            text-align: left;
-        }
-        input:focus {
-            outline: none;
-            border-color: #ff0080;
-            box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
-        }
-        .btn-admin, .verify-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(45deg, #00ff41, #ff0080);
-            border: none;
-            border-radius: 5px;
-            color: #000;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.3s;
-        }
-        .btn-admin:hover, .verify-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 255, 65, 0.4);
-        }
-        .btn-admin:disabled, .verify-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        #challenge-question {
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .challenge-input {
-            width: 100%;
-            font-size: 18px;
-            padding: 15px;
-            margin-top: 15px;
-            background: #000;
-            color: #0f0;
-            border: 2px solid #00ff41;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .error-message {
-            margin-top: 20px;
-            color: #ff0080;
-            font-weight: bold;
-            display: none;
-        }
-        .success-message {
-            margin-top: 20px;
-            color: #00ff41;
-            font-weight: bold;
-            display: none;
-        }
-        /* Team Section Styles */
-        #team {
-            background: rgba(0,0,0,0.95);
-            border: 2px solid #00ff41;
-            border-radius: 10px;
-            padding: 30px 40px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 0 30px rgba(0,255,65,0.3);
-            margin-top: 30px;
-            text-align: center;
-        }
-        .section-title {
-            font-size: 24px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #00ff41;
-        }
-        .team-grid {
-            display: flex;
-            justify-content: center;
-        }
-        .team-card {
-            background: #000;
-            border: 2px solid #7D3C98;
-            border-radius: 10px;
-            padding: 20px;
-            width: 100%;
-            max-width: 320px;
-            color: #bb86fc;
-        }
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 15px auto;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid #7D3C98;
-        }
-        .profile-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .dev-name {
-            margin: 10px 0 5px 0;
-            font-size: 22px;
-            font-weight: bold;
-            color: #9b59b6;
-        }
-        .dev-role {
-            font-size: 16px;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #bb86fc;
-        }
-        .dev-description {
-            font-size: 14px;
-            margin-bottom: 15px;
-            font-style: italic;
-        }
-        .btn-telegram {
-            display: inline-block;
-            padding: 10px 15px;
-            background: linear-gradient(45deg, #7D3C98, #ab47bc);
-            color: #000;
-            border-radius: 5px;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background 0.3s ease;
-        }
-        .btn-telegram:hover {
-            background: linear-gradient(45deg, #ab47bc, #7D3C98);
-        }
-        .purple-border {
-            border-color: #7D3C98;
-        }
-        .purple-text {
-            color: #9b59b6;
-        }
-    </style>
-    <!-- إضافة أيقونات FontAwesome (اختياري) -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CODEX TEAM - Admin Access</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+body { font-family: 'Fira Code', monospace; background: #0d0d0d; color: #00ff99; overflow-x:hidden; }
+.glitch-text { position: relative; color: #00ff99; font-size: 32px; font-weight:700; }
+.glitch-text::before,.glitch-text::after { content: attr(data-text); position:absolute; left:0; top:0; opacity:0.8; }
+.glitch-text::before { left:2px; text-shadow:-2px 0 #f0f; animation: glitchTop 2s infinite linear alternate-reverse; }
+.glitch-text::after { left:-2px; text-shadow:-2px 0 #0ff; animation: glitchBottom 2s infinite linear alternate-reverse; }
+@keyframes glitchTop { 0% { clip: rect(0,9999px,0,0); } 5% { clip: rect(0,9999px,5px,0); } 10% { clip: rect(0,9999px,0,0); } 15% { clip: rect(0,9999px,5px,0); } 100% { clip: rect(0,9999px,0,0); } }
+@keyframes glitchBottom { 0% { clip: rect(5px,9999px,9999px,0); } 5% { clip: rect(5px,9999px,9999px,0); } 10% { clip: rect(5px,9999px,9999px,0); } 100% { clip: rect(5px,9999px,9999px,0); } }
+.tool-section { padding: 30px 20px; background: rgba(0,0,0,0.7); margin:20px 0; border-radius:12px; }
+.input-group { margin-bottom:15px; }
+.input-field { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #00ff99; background:#111; color:#00ff99; }
+.btn { padding:8px 16px; border:none; border-radius:6px; background:linear-gradient(90deg,#ff00ff,#00ffff); color:#000; cursor:pointer; font-weight:600; }
+.status-message { color:#ff5555; font-weight:500; margin-top:5px; }
+.login-container, #challenge-box { max-width:500px; margin:auto; text-align:center; }
+#challenge-box { padding:20px; border:1px solid #00ff99; border-radius:12px; background: rgba(0,0,0,0.6); margin-top:50px; }
+#login-container { display:none; padding:20px; border:1px solid #00ff99; border-radius:12px; background: rgba(0,0,0,0.6); margin-top:50px; }
+</style>
 </head>
 <body>
+<canvas id="matrix-canvas"></canvas>
 
-    <div class="challenge-box" id="challenge-box">
-        <h2 class="challenge-title">🖕 CODEX Advanced Security System</h2>
-        <div id="challenge-question">تحميل السؤال...</div>
-        <input type="number" id="answer-input" class="challenge-input" placeholder="أدخل الإجابة هنا..." />
-        <button id="verify-btn" class="verify-btn">تحقق</button>
-        <div id="challenge-message" class="error-message"></div>
-    </div>
+<!-- CAPTCHA -->
+<div id="challenge-box" class="tool-section">
+    <h2 class="glitch-text" data-text="CODEX Security">CODEX Security</h2>
+    <p id="challenge-question">تحميل السؤال...</p>
+    <input type="number" id="answer-input" class="input-field" placeholder="أدخل الإجابة هنا..." />
+    <button id="verify-btn" class="btn">تحقق</button>
+    <div id="challenge-message" class="status-message"></div>
+</div>
 
-    <div class="login-container" id="login-container" style="display: none;">
-        <div class="skull-icon">💀</div>
-        <h1 class="login-title">ADMIN ACCESS TERMINAL</h1>
+<!-- LOGIN -->
+<div id="login-container">
+    <h2 class="glitch-text" data-text="Admin Access">Admin Access</h2>
+    <form id="admin-login-form">
+        <div class="input-group">
+            <label>Admin Username</label>
+            <input type="text" id="admin-username" class="input-field" placeholder="Enter admin username..." required>
+        </div>
+        <div class="input-group">
+            <label>Master Password</label>
+            <input type="password" id="admin-password" class="input-field" placeholder="Enter master password..." required>
+        </div>
+        <button type="submit" class="btn">Access Admin Panel</button>
+    </form>
+    <div id="error-message" class="status-message"></div>
+    <div id="success-message" class="status-message"></div>
 
-        <form id="admin-login-form">
-            <div class="form-group">
-                <label>Admin Username</label>
-                <input type="text" id="admin-username" placeholder="Enter admin username..." required>
-            </div>
-            <div class="form-group">
-                <label>Master Password</label>
-                <input type="password" id="admin-password" placeholder="Enter master password..." required>
-            </div>
-            <button type="submit" class="btn-admin">🚀 ACCESS ADMIN PANEL</button>
-        </form>
-
-        <div id="error-message" class="error-message"></div>
-        <div id="success-message" class="success-message"></div>
-
-        <!-- Team Section بعد صفحة تسجيل الدخول -->
-        <section id="team" class="tool-section">
-            <h2 class="section-title">Developer Matrix</h2>
-            <div class="team-grid">
-                <div class="team-card">
-                    <div class="profile-img purple-border">
-                        <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
-                    </div>
-                    <h3 class="dev-name purple-text">BNGX</h3>
-                    <p class="dev-role">CODEX TEAM PANEL</p>
-                    <p class="dev-description">Site creator</p>
-                    <a href="https://t.me/BNGXXXX" target="_blank" class="btn btn-telegram purple">
-                        <i class="fab fa-telegram-plane"></i> Contact via Telegram
-                    </a>
+    <!-- Team Section -->
+    <section id="team" class="tool-section">
+        <h2 class="glitch-text" data-text="BNGX">BNGX</h2>
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="profile-img purple-border">
+                    <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
                 </div>
+                <h3 class="dev-name purple-text">BNGX</h3>
+                <p class="dev-role">CODEX TEAM PANEL</p>
+                <p class="dev-description">Site creator</p>
+                <a href="https://t.me/BNGXXXX" target="_blank" class="btn btn-telegram purple">
+                    <i class="fab fa-telegram-plane"></i> Contact via Telegram
+                </a>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
+</div>
 
 <script>
-    const challengeBox = document.getElementById('challenge-box');
-    const loginContainer = document.getElementById('login-container');
+const challengeBox = document.getElementById('challenge-box');
+const loginContainer = document.getElementById('login-container');
+const verifyBtn = document.getElementById('verify-btn');
+const answerInput = document.getElementById('answer-input');
+const challengeMessage = document.getElementById('challenge-message');
+const loginForm = document.getElementById('admin-login-form');
+const errorMsg = document.getElementById('error-message');
+const successMsg = document.getElementById('success-message');
 
-    const verifyBtn = document.getElementById('verify-btn');
-    const answerInput = document.getElementById('answer-input');
-    const challengeMessage = document.getElementById('challenge-message');
-    const challengeQuestion = document.getElementById('challenge-question');
+let question = "";
+let attempts = 0;
+const maxAttempts = 3;
 
-    const loginForm = document.getElementById('admin-login-form');
-    const errorMsg = document.getElementById('error-message');
-    const successMsg = document.getElementById('success-message');
+function showMessage(element,msg,isError){
+    element.textContent = msg;
+    element.style.color = isError?'#ff5555':'#00ff99';
+}
+async function loadChallenge(){
+    try{
+        const res = await fetch('/api/security/generate-challenge');
+        const data = await res.json();
+        question = data.question;
+        document.getElementById('challenge-question').textContent=`حل المعادلة: ${question}`;
+        answerInput.value="";
+        challengeMessage.style.display="none";
+        verifyBtn.disabled=false;
+    }catch{document.getElementById('challenge-question').textContent="فشل في تحميل السؤال.";}
+}
+async function verifyAnswer(){
+    let answer = answerInput.value.trim();
+    if(answer===""){showMessage(challengeMessage,"الرجاء إدخال الإجابة",true);return;}
+    verifyBtn.disabled=true;
+    try{
+        const res=await fetch('/api/security/verify-human',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer})});
+        const data=await res.json();
+        if(res.ok && data.success){
+            showMessage(challengeMessage,data.message,false);
+            setTimeout(()=>{challengeBox.style.display='none';loginContainer.style.display='block';},1000);
+        } else { attempts++; if(attempts>=maxAttempts){showMessage(challengeMessage,"تم حظرك مؤقتًا",true); setTimeout(()=>{window.location.href='/security/blocked';},3000);} else {showMessage(challengeMessage,data.message||"خطأ",true); await loadChallenge();} }
+    }catch{showMessage(challengeMessage,"خطأ أثناء التحقق",true);}
+    finally{verifyBtn.disabled=false;}
+}
+verifyBtn.addEventListener('click',verifyAnswer);
+answerInput.addEventListener('keypress',e=>{if(e.key==='Enter')verifyAnswer();});
+loginForm.addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const username=document.getElementById('admin-username').value.trim();
+    const password=document.getElementById('admin-password').value.trim();
+    try{
+        const response=await fetch('/admin/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+        const data=await response.json();
+        if(data.success){ showMessage(successMsg,'تم تسجيل الدخول',false); sessionStorage.setItem('admin_session',data.session_id); setTimeout(()=>{window.location.href='/';},1000); }
+        else { showMessage(errorMsg,data.message||'فشل في تسجيل الدخول',true); loginForm.reset(); }
+    }catch{showMessage(errorMsg,'خطأ في الاتصال',true);}
+});
+loadChallenge();
 
-    let question = "";
-    let attempts = 0;
-    const maxAttempts = 3;
+// MATRIX BACKGROUND
+const canvas=document.getElementById('matrix-canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%'.split('');
+const fontSize=16;
+const columns=Math.floor(canvas.width/fontSize);
+const drops=Array(columns).fill(1);
 
-    function showMessage(element, msg, isError) {
-        element.textContent = msg;
-        element.style.display = 'block';
-        element.style.color = isError ? '#ff0040' : '#00ff41';
+function drawMatrix(){
+    ctx.fillStyle='rgba(0,0,0,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#0F0';
+    ctx.font=fontSize+'px monospace';
+    for(let i=0;i<drops.length;i++){
+        const text=letters[Math.floor(Math.random()*letters.length)];
+        ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+        if(drops[i]*fontSize>canvas.height && Math.random()>0.975){drops[i]=0;}
+        drops[i]++;
     }
-
-    async function loadChallenge() {
-        try {
-            const res = await fetch('/api/security/generate-challenge');
-            if (res.ok) {
-                const data = await res.json();
-                question = data.question;
-                challengeQuestion.textContent = `حل المعادلة: ${question}`;
-                answerInput.value = "";
-                challengeMessage.style.display = "none";
-                verifyBtn.disabled = false;
-            } else {
-                challengeQuestion.textContent = "حدث خطأ في تحميل السؤال.";
-                verifyBtn.disabled = true;
-            }
-        } catch {
-            challengeQuestion.textContent = "فشل في تحميل السؤال.";
-            verifyBtn.disabled = true;
-        }
-    }
-
-    async function verifyAnswer() {
-        let answer = answerInput.value.trim();
-        if (answer === "") {
-            showMessage(challengeMessage, "الرجاء إدخال الإجابة", true);
-            return;
-        }
-        verifyBtn.disabled = true;
-
-        try {
-            const res = await fetch('/api/security/verify-human', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({answer: answer})
-            });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                showMessage(challengeMessage, data.message, false);
-                setTimeout(() => {
-                    // إخفاء الكابتشا وظهور صفحة تسجيل الدخول
-                    challengeBox.style.display = 'none';
-                    loginContainer.style.display = 'block';
-                }, 1000);
-            } else {
-                attempts++;
-                if(attempts >= maxAttempts){
-                    showMessage(challengeMessage, "تجاوزت عدد المحاولات المسموح به. سيتم حظرك مؤقتًا.", true);
-                    verifyBtn.disabled = true;
-                    setTimeout(() => {
-                        window.location.href = '/security/blocked'; // صفحة الحظر
-                    }, 3000);
-                } else {
-                    showMessage(challengeMessage, data.message || "الإجابة غير صحيحة، حاول مجددًا.", true);
-                    await loadChallenge();
-                }
-            }
-        } catch {
-            showMessage(challengeMessage, "حدث خطأ أثناء التحقق، حاول لاحقاً.", true);
-        } finally {
-            verifyBtn.disabled = false;
-        }
-    }
-
-    verifyBtn.addEventListener('click', verifyAnswer);
-    answerInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            verifyAnswer();
-        }
-    });
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        errorMsg.style.display = 'none';
-        successMsg.style.display = 'none';
-
-        const username = document.getElementById('admin-username').value.trim();
-        const password = document.getElementById('admin-password').value.trim();
-
-        try {
-            const response = await fetch('/admin/authenticate', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                showMessage(successMsg, 'تم تسجيل الدخول بنجاح، جاري التحويل...', false);
-                sessionStorage.setItem('admin_session', data.session_id);
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1000);
-            } else {
-                showMessage(errorMsg, data.message || 'فشل في تسجيل الدخول', true);
-                loginForm.reset();
-            }
-        } catch (error) {
-            showMessage(errorMsg, 'خطأ في الاتصال. حاول مرة أخرى.', true);
-        }
-    });
-
-    loadChallenge();
+}
+setInterval(drawMatrix,50);
+window.addEventListener('resize',()=>{
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+});
 </script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-DATABASE_URL = "postgresql://bngx_user:XqYueLZSWajZCbBLHZ6WkOpJxFKZi0bZ@dpg-d34rj956ubrc73cm6mu0-a.oregon-postgres.render.com:5432/bngx"
+DATABASE_URL = "DATABASE_URL = "postgresql://bngx_o9tu_user:D8kA9EfmAiXmGze6OCqLOWaaMuA7KbBo@dpg-d35ndpbipnbc739k2lhg-a:5432/bngx_o9tu"
 
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')

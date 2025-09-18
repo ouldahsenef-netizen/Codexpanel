@@ -202,7 +202,7 @@ def create_account():
         if nick_res.get('success', False):
             update_account_nickname(account_id, nickname)
             return jsonify({"success": True, "message": "تم تغيير الاسم بنجاح", "nicknames": {str(account_id): nickname}})
-        return jsonify({"success": False, "message": nick_res.get('message', "فشل في تغيير الاسم")})
+        return jsonify({"success": False, "message": nick_res.get('message', "تم اضافة الحساب ")})
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 

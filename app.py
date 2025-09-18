@@ -1,18 +1,18 @@
 from flask import Flask, request, jsonify, render_template, redirect, session, url_for
-import time
-import secrets
-import re
-import threading
-import requests
+import time, secrets, re, threading, requests, random
 from functools import wraps
 from collections import defaultdict
-from db import create_accounts_table, get_all_accounts, get_account_by_id, update_account_nickname, add_account
-import random
+from db import (
+    create_accounts_table, create_friends_table, get_all_accounts, get_account_by_id,
+    update_account_nickname, add_account, add_friend_to_db, get_friends_by_account
+)
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
+# إنشاء الجداول إذا لم تكن موجودة
 create_accounts_table()
+create_friends_table()
 
 S1X_PROTECTION_CONFIG = {
     'enabled': True,
@@ -34,22 +34,19 @@ ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
 lock = threading.Lock()
 
-ADMIN_CREDENTIALS = {
-    "bnnn": "bnnn"
-}
+ADMIN_CREDENTIALS = {"bnnn": "bnnn"}
 
+# --- Helper Functions ---
 def get_client_ip():
     if request.environ.get('HTTP_X_FORWARDED_FOR'):
         return request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0].strip()
     return request.environ.get('REMOTE_ADDR', '')
 
 def is_bot_user_agent(user_agent):
-    if not user_agent:
-        return True
+    if not user_agent: return True
     ua = user_agent.lower()
     for pattern in S1X_PROTECTION_CONFIG['suspicious_patterns']:
-        if re.search(pattern, ua):
-            return True
+        if re.search(pattern, ua): return True
     known_browsers = ['mozilla', 'webkit', 'chrome', 'firefox', 'safari', 'edge']
     return not any(browser in ua for browser in known_browsers)
 
@@ -58,21 +55,17 @@ def analyze_request_pattern(ip, endpoint, headers):
     with lock:
         ddos_tracker[ip][current_time] += 1
         old_ticks = [t for t in ddos_tracker[ip] if current_time - t > 60]
-        for t in old_ticks:
-            del ddos_tracker[ip][t]
+        for t in old_ticks: del ddos_tracker[ip][t]
 
         recent_requests = sum(ddos_tracker[ip].values())
-
         suspicious_indicator = 0
-        if is_bot_user_agent(headers.get('User-Agent', '')):
-            suspicious_indicator += 2
+        if is_bot_user_agent(headers.get('User-Agent', '')): suspicious_indicator += 2
         essential_headers = ['Accept', 'Accept-Language', 'Accept-Encoding']
         missing_headers = sum(1 for h in essential_headers if h not in headers)
         suspicious_indicator += missing_headers
         if not headers.get('Referer') and endpoint not in ['/', '/security/challenge', '/admin/login', '/admin/authenticate']:
             suspicious_indicator += 1
-        if recent_requests > 15:
-            suspicious_indicator += 2
+        if recent_requests > 15: suspicious_indicator += 2
         if recent_requests > S1X_PROTECTION_CONFIG['ddos_threshold']:
             return 'ddos_detected'
         if suspicious_indicator >= 5:
@@ -81,8 +74,7 @@ def analyze_request_pattern(ip, endpoint, headers):
     return 'normal'
 
 def should_challenge_request(ip, user_agent, endpoint):
-    if not S1X_PROTECTION_CONFIG['enabled']:
-        return False
+    if not S1X_PROTECTION_CONFIG['enabled']: return False
     session_data = verification_sessions.get(ip)
     session_timeout = S1X_PROTECTION_CONFIG.get('session_timeout', 1800)
     if session_data:
@@ -93,7 +85,6 @@ def should_challenge_request(ip, user_agent, endpoint):
     return True
 
 def verify_challenge_token(token, ip):
-    # بسيط الآن، يمكن تطوير بناءً على توكنيزيشن لاحقاً
     return True
 
 def protection_required(f):
@@ -120,63 +111,40 @@ def admin_required(f):
     def decorated(*args, **kwargs):
         if session.get('admin_logged_in'):
             return f(*args, **kwargs)
-        else:
-            return redirect(url_for('admin_login'))
+        return redirect(url_for('admin_login'))
     return decorated
 
 def generate_captcha_challenge():
-    operations = ['+', '-']
-    op = random.choice(operations)
-    if op == '+':
-        n1, n2 = random.randint(1, 50), random.randint(1, 50)
-        answer = n1 + n2
-    else:
-        n1, n2 = random.randint(20, 70), random.randint(1, 20)
-        answer = n1 - n2
-    question = f"{n1} {op} {n2}"
+    op = random.choice(['+', '-'])
+    if op == '+': n1, n2 = random.randint(1,50), random.randint(1,50); answer = n1+n2
+    else: n1, n2 = random.randint(20,70), random.randint(1,20); answer = n1-n2
     session['captcha_answer'] = answer
-    return question
+    return f"{n1} {op} {n2}"
 
+# --- Admin & Security Routes ---
 @app.route('/api/security/generate-challenge')
-def generate_challenge():
-    question = generate_captcha_challenge()
-    return jsonify({"question": question})
+def generate_challenge(): return jsonify({"question": generate_captcha_challenge()})
 
 @app.route('/api/security/verify-human', methods=['POST'])
 def verify_human():
     user_answer = request.json.get('answer')
-    if user_answer is None:
-        return jsonify({"success": False, "message": "الرجاء إدخال الإجابة"}), 400
-    
-    try:
-        user_answer = int(user_answer)
-    except ValueError:
-        return jsonify({"success": False, "message": "الإجابة يجب أن تكون رقم"}), 400
-    
-    stored_answer = session.get('captcha_answer')
-    if stored_answer is None:
-        return jsonify({"success": False, "message": "التحدي غير موجود، الرجاء إعادة تحميل الصفحة"}), 400
-    
     ip = get_client_ip()
-    
+    try: user_answer = int(user_answer)
+    except: return jsonify({"success": False, "message": "الإجابة يجب أن تكون رقم"}), 400
+    stored_answer = session.get('captcha_answer')
+    if stored_answer is None: return jsonify({"success": False, "message": "التحدي غير موجود"}), 400
     if user_answer == stored_answer:
-        verification_sessions[ip] = {
-            'captcha_verified': True,
-            'verified_at': time.time(),
-        }
+        verification_sessions[ip] = {'captcha_verified': True, 'verified_at': time.time()}
         session.pop('captcha_answer', None)
         failed_challenges[ip] = 0
         return jsonify({"success": True, "message": "تم التحقق بنجاح"})
-    else:
-        failed_challenges[ip] += 1
-        if failed_challenges[ip] >= S1X_PROTECTION_CONFIG['max_attempts']:
-            return jsonify({"success": False, "message": "تجاوزت عدد المحاولات المسموح به. سيتم حظرك مؤقتًا."}), 403
-        else:
-            return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
+    failed_challenges[ip] += 1
+    if failed_challenges[ip] >= S1X_PROTECTION_CONFIG['max_attempts']:
+        return jsonify({"success": False, "message": "تجاوزت عدد المحاولات. سيتم حظرك مؤقتًا."}), 403
+    return jsonify({"success": False, "message": "إجابة غير صحيحة، حاول مرة أخرى"})
 
 @app.route('/security/challenge')
-def security_challenge():
-    return render_template('captcha.html')
+def security_challenge(): return render_template('captcha.html')
 
 @app.route('/admin/login')
 def admin_login():
@@ -189,36 +157,69 @@ def admin_login():
 def admin_authenticate():
     ip = get_client_ip()
     if not verification_sessions.get(ip, {}).get('captcha_verified'):
-        return jsonify({"success": False, "message": "يجب تجاوز التحقق الأمني أولاً"}), 403
-
+        return jsonify({"success": False, "message": "يجب تجاوز التحقق الأمني"}), 403
     data = request.json or {}
-    username = data.get('username')
-    password = data.get('password')
+    username, password = data.get('username'), data.get('password')
     if username in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[username] == password:
         session['admin_logged_in'] = True
         session['admin_username'] = username
         verification_sessions[ip]['admin_logged_in'] = True
         return jsonify({"success": True, "session_id": secrets.token_hex(16)})
-    else:
-        return jsonify({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة"})
+    return jsonify({"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة"})
 
+# --- Load registeredUIDs from DB ---
+registeredUIDs = {}
+for acc in get_all_accounts():
+    registeredUIDs[str(acc['id'])] = get_friends_by_account(acc['id'])
+
+# --- Main Routes ---
 @app.route('/')
 @protection_required
 @admin_required
 def index():
     accounts = get_all_accounts()
     nicknames = {str(acc['id']): acc['nickname'] for acc in accounts}
-    return render_template('index.html', nicknames=nicknames)
+    return render_template('index.html', nicknames=nicknames, registeredUIDs=registeredUIDs)
 
+# --- Create / Update Account Name ---
 @app.route('/api/create_account', methods=['POST'])
 @protection_required
 @admin_required
 def create_account():
     data = request.json or {}
+    account_id, nickname = data.get('account_id'), data.get('nickname')
+    if not account_id or not nickname: return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
+    account = get_account_by_id(account_id)
+    if not account: return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
+
+    uid, password = account['uid'], account['password']
+    try:
+        token_res = requests.get(f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json()
+        token = token_res.get('token')
+        if not token: return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
+
+        nick_res = requests.get(f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}", timeout=5).json()
+        if nick_res.get('success', False):
+            update_account_nickname(account_id, nickname)
+            return jsonify({"success": True, "message": "تم تغيير الاسم بنجاح", "nicknames": {str(account_id): nickname}})
+        return jsonify({"success": False, "message": nick_res.get('message', "فشل في تغيير الاسم")})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
+
+# --- Add Friend ---
+ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
+
+@app.route('/api/add_friend', methods=['POST'])
+@protection_required
+@admin_required
+def add_friend():
+    data = request.json or {}
     account_id = data.get('account_id')
-    nickname = data.get('nickname')
-    if not account_id or not nickname:
-        return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
+    friend_uid = data.get('friend_uid')
+    days = data.get('days', None)
+
+    if not account_id or not friend_uid:
+        return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
 
     account = get_account_by_id(account_id)
     if not account:
@@ -228,70 +229,25 @@ def create_account():
     password = account['password']
 
     try:
-        # طلب التوكن من الخدمة الخارجية
+        # الحصول على توكن
         oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
         oauth_response = requests.get(oauth_url, timeout=5)
         oauth_response.raise_for_status()
-        oauth_data = oauth_response.json()
-        token = oauth_data.get('token')
-
-        if not token:
-            return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
-
-        # طلب تغيير الاسم باستخدام التوكن والاسم الجديد
-        change_nick_url = f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}"
-        nick_response = requests.get(change_nick_url, timeout=5)
-        nick_response.raise_for_status()
-        nick_data = nick_response.json()
-
-        if nick_data.get('success', False):
-            update_account_nickname(account_id, nickname)
-            return jsonify({"success": True, "message": "تم تغيير الاسم بنجاح"}), 200
-        else:
-            error_msg = nick_data.get('message', "فشل في تغيير الاسم")
-            return jsonify({"success": False, "message": error_msg}), 400
-    except Exception as e:
-        return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
-
-# تعريف الرابط للنماذج الخارجية
-ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
-REMOVE_URL_TEMPLATE = "https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={uid}"
-# مكان دالة add_friend
-@app.route('/api/add_friend', methods=['POST'])
-@protection_required
-@admin_required
-def add_friend():
-    data = request.json or {}
-    account_id = data.get('account_id')
-    friend_uid = data.get('friend_uid')
-    days = data.get('days', None)  # القيمة الجديدة
-
-    if not account_id or not friend_uid:
-        return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
-
-    accounts = {str(acc['id']): acc for acc in get_all_accounts()}
-    account = accounts.get(str(account_id))
-    if not account:
-        return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
-
-    uid = account['uid']
-    password = account['password']
-
-    try:
-        oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        oauth_response = requests.get(oauth_url, timeout=5)
-        oauth_response.raise_for_status()
-        oauth_data = oauth_response.json()
-        token = oauth_data.get('token')
+        token = oauth_response.json().get('token')
         if not token:
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        add_url = ADD_URL_TEMPLATE.format(token=token, uid=friend_uid)
+        # إرسال طلب إضافة صديق
+        add_url = f"https://add-friend-weld.vercel.app/add_friend?token={token}&uid={friend_uid}"
         add_response = requests.get(add_url, timeout=5)
         add_response.raise_for_status()
         add_data = add_response.json()
 
-        if add_data.get('success', False):
+        if add_data.get('status') == 'success':
+            # حفظ الـ UID في قاعدة البيانات
+            add_account(friend_uid, password='')  # يمكنك تعديل الباسوورد إذا متوفر
+
+            # إذا تم تحديد الأيام، إرسالها للـ API الخارجي
             if days is not None:
                 try:
                     api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"
@@ -321,35 +277,32 @@ def remove_friend():
     friend_uid = data.get('friend_uid')
 
     if not account_id or not friend_uid:
-        return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID للصديق"}), 400
+        return jsonify({"success": False, "message": "يرجى تحديد الحساب وUID الصديق"}), 400
 
-    accounts = {str(acc['id']): acc for acc in get_all_accounts()}
-    account = accounts.get(str(account_id))
+    account = get_account_by_id(account_id)
     if not account:
-        return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
+        return jsonify({"success": False, "message": "الحساب غير موجود"}), 400
 
     uid = account['uid']
     password = account['password']
 
     try:
         oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        oauth_response = requests.get(oauth_url, timeout=5)
-        oauth_response.raise_for_status()
-        oauth_data = oauth_response.json()
-        token = oauth_data.get('token')
+        token = requests.get(oauth_url, timeout=5).json().get('token')
         if not token:
-            return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
+            return jsonify({"success": False, "message": "فشل الحصول على التوكن"}), 500
 
-        remove_url = REMOVE_URL_TEMPLATE.format(token=token, uid=friend_uid)
-        remove_response = requests.get(remove_url, timeout=5)
-        remove_response.raise_for_status()
-        remove_data = remove_response.json()
+        remove_url = f"https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={friend_uid}"
+        remove_data = requests.get(remove_url, timeout=5).json()
 
         if remove_data.get('success', False):
-            return jsonify({"success": True, "message": "تم إزالة الصديق بنجاح"})
+            # إزالة من قاعدة البيانات
+            conn = get_db_connection()
+            conn.run('DELETE FROM accounts WHERE uid = :uid;', uid=int(friend_uid))
+            conn.close()
+            return jsonify({"success": True, "message": "تمت إزالة الصديق من DB بنجاح"})
         else:
-            error_msg = remove_data.get('message', "فشل في إزالة الصديق")
-            return jsonify({"success": False, "message": error_msg})
+            return jsonify({"success": False, "message": remove_data.get('message', "فشل إزالة الصديق")})
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 

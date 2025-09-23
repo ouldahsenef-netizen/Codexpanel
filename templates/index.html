@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="ar">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CODEX TEAM - Advanced Hacker Tools</title>
+    <title>BNGX PANEL - Advanced Hacker Tools</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,140 +11,146 @@
             font-family: 'Fira Code', monospace;
             background: #0d0d0d;
             color: #00ff99;
-        }
+        }.section-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #00ff99;
+        position: relative;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
 
-        .section-title {
-            font-size: 28px;
-            font-weight: 600;
-            color: #00ff99;
-            position: relative;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
+    .section-title::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 4px;
+        bottom: -5px;
+        left: 0;
+        background: linear-gradient(90deg, #ff00ff, #00ffff);
+        border-radius: 2px;
+    }
 
-        .section-title::after {
-            content: "";
-            position: absolute;
-            width: 100%;
-            height: 4px;
-            bottom: -5px;
-            left: 0;
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
-            border-radius: 2px;
-        }
+    .tool-section {
+        padding: 30px 20px;
+        background: rgba(0,0,0,0.7);
+        margin: 20px 0;
+        border-radius: 12px;
+    }
 
-        .tool-section {
-            padding: 30px 20px;
-            background: rgba(0,0,0,0.7);
-            margin: 20px 0;
-            border-radius: 12px;
-        }
+    .input-group {
+        margin-bottom: 15px;
+    }
 
-        .input-group {
-            margin-bottom: 15px;
-        }
+    .input-field {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid #00ff99;
+        background: #111;
+        color: #00ff99;
+    }
 
-        .input-field {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border: 1px solid #00ff99;
-            background: #111;
-            color: #00ff99;
-        }
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: linear-gradient(90deg,#ff00ff,#00ffff);
+        color: #000;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            background: linear-gradient(90deg,#ff00ff,#00ffff);
-            color: #000;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    .status-message {
+        color: #ff5555;
+        font-weight: 500;
+        margin-top: 5px;
+    }
 
-        .status-message {
-            color: #ff5555;
-            font-weight: 500;
-            margin-top: 5px;
-        }
+    .api-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+        gap: 20px;
+    }
 
-        .api-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
-            gap: 20px;
-        }
+    .api-card {
+        padding: 20px;
+        border: 1px solid #00ff99;
+        border-radius: 12px;
+        background: rgba(0,0,0,0.6);
+    }
 
-        .api-card {
-            padding: 20px;
-            border: 1px solid #00ff99;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.6);
-        }
+    .api-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
 
-        .api-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+    .api-header h3 {
+        margin: 0;
+        color: #00ff99;
+    }
 
-        .api-header h3 {
-            margin: 0;
-            color: #00ff99;
-        }
+    /* Glitch effect for headers */
+    .glitch-text {
+        position: relative;
+        color: #00ff99;
+        font-size: 32px;
+        font-weight: 700;
+    }
 
-        /* Glitch effect for headers */
-        .glitch-text {
-            position: relative;
-            color: #00ff99;
-            font-size: 32px;
-            font-weight: 700;
-        }
+    .glitch-text::before,
+    .glitch-text::after {
+        content: attr(data-text);
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0.8;
+    }
 
-        .glitch-text::before,
-        .glitch-text::after {
-            content: attr(data-text);
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0.8;
-        }
+    .glitch-text::before {
+        left: 2px;
+        text-shadow: -2px 0 #f0f;
+        animation: glitchTop 2s infinite linear alternate-reverse;
+    }
 
-        .glitch-text::before {
-            left: 2px;
-            text-shadow: -2px 0 #f0f;
-            animation: glitchTop 2s infinite linear alternate-reverse;
-        }
+    .glitch-text::after {
+        left: -2px;
+        text-shadow: -2px 0 #0ff;
+        animation: glitchBottom 2s infinite linear alternate-reverse;
+    }
 
-        .glitch-text::after {
-            left: -2px;
-            text-shadow: -2px 0 #0ff;
-            animation: glitchBottom 2s infinite linear alternate-reverse;
-        }
+    @keyframes glitchTop {
+        0% { clip: rect(0,9999px,0,0); }
+        5% { clip: rect(0,9999px,5px,0); }
+        10% { clip: rect(0,9999px,0,0); }
+        15% { clip: rect(0,9999px,5px,0); }
+        20% { clip: rect(0,9999px,0,0); }
+        25% { clip: rect(0,9999px,5px,0); }
+        30% { clip: rect(0,9999px,0,0); }
+        100% { clip: rect(0,9999px,0,0); }
+    }
 
-        @keyframes glitchTop {
-            0% { clip: rect(0,9999px,0,0); }
-            5% { clip: rect(0,9999px,5px,0); }
-            10% { clip: rect(0,9999px,0,0); }
-            15% { clip: rect(0,9999px,5px,0); }
-            20% { clip: rect(0,9999px,0,0); }
-            25% { clip: rect(0,9999px,5px,0); }
-            30% { clip: rect(0,9999px,0,0); }
-            100% { clip: rect(0,9999px,0,0); }
-        }
+    @keyframes glitchBottom {
+        0% { clip: rect(5px,9999px,9999px,0); }
+        5% { clip: rect(5px,9999px,9999px,0); }
+        10% { clip: rect(5px,9999px,9999px,0); }
+        15% { clip: rect(0,9999px,9999px,0); }
+        20% { clip: rect(5px,9999px,9999px,0); }
+        25% { clip: rect(0,9999px,9999px,0); }
+        30% { clip: rect(5px,9999px,9999px,0); }
+        100% { clip: rect(5px,9999px,9999px,0); }
+    }
 
-        @keyframes glitchBottom {
-            0% { clip: rect(5px,9999px,9999px,0); }
-            5% { clip: rect(5px,9999px,9999px,0); }
-            10% { clip: rect(5px,9999px,9999px,0); }
-            15% { clip: rect(0,9999px,9999px,0); }
-            20% { clip: rect(5px,9999px,9999px,0); }
-            25% { clip: rect(0,9999px,9999px,0); }
-            30% { clip: rect(5px,9999px,9999px,0); }
-            100% { clip: rect(5px,9999px,9999px,0); }
-        }
-    </style>
+    /* Additional layout tweaks */
+    .container { max-width: 1100px; margin: 20px auto; padding: 10px; }
+    .team-grid { display:flex; gap:20px; }
+    .team-card { padding: 15px; border-radius:10px; background: rgba(0,0,0,0.6); border:1px solid #00ff99; }
+    .profile-img img { width:120px; height:120px; object-fit:cover; border-radius:10px; }
+    footer { text-align:center; margin-top:20px; }
+</style>
+
 </head>
 <body>
     <div class="container">
@@ -157,9 +162,9 @@
                     <label for="bot-select">اختر رقم الحساب</label>
                     <select id="bot-select" class="input-field">
                         <option value="" disabled selected>اختر رقم الحساب...</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
+                        {% for acc in accounts %}
+                            <option value="{{ acc.id }}">#{{ acc.id }} — {{ acc.uid }} {% if acc.nickname %}({{ acc.nickname }}){% endif %}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="input-group">
@@ -169,130 +174,254 @@
                 </div>
                 <div id="bot-name-status" class="status-message"></div>
             </div>
-        </section>
-
-        <!-- API TOOLS Section -->
-        <section id="api-tools" class="tool-section">
-            <h2 class="section-title glitch-text" data-text="API Arsenal">API Arsenal</h2>
-            <div class="api-grid">
-                <!-- ADD FRIEND -->
-                <div class="api-card">
-                    <div class="api-header"><i class="fas fa-user-edit"></i><h3>ADD FRIEND</h3></div>
-                    <div class="input-group">
-                        <label for="bot-list-add">YOUR BOT LIST</label>
-                        <select id="bot-list-add" class="input-field">
-                            <option value="" disabled selected>Select your bot...</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="user-id" placeholder="Enter Friend UID..." class="input-field" />
-                    </div>
-                    <div class="input-group">
-                        <input type="number" id="friend-days" placeholder="Enter number of days..." class="input-field" min="1" />
-                    </div>
-                    <div class="input-group">
-                        <button id="adding-friend" class="btn btn-api">add friend</button>
-                    </div>
-                    <div id="add-friend-status" class="status-message"></div>
+        </section><!-- API TOOLS Section -->
+    <section id="api-tools" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="API Arsenal">API Arsenal</h2>
+        <div class="api-grid">
+            <!-- ADD FRIEND -->
+            <div class="api-card">
+                <div class="api-header"><i class="fas fa-user-edit"></i><h3>ADD FRIEND</h3></div>
+                <div class="input-group">
+                    <label for="bot-list-add">YOUR BOT LIST</label>
+                    <select id="bot-list-add" class="input-field">
+                        <option value="" disabled selected>Select your bot...</option>
+                        {% for acc in accounts %}
+                            <option value="{{ acc.id }}">#{{ acc.id }} — {{ acc.uid }} {% if acc.nickname %}({{ acc.nickname }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-
-                <!-- REMOVE FRIEND -->
-                <div class="api-card">
-                    <div class="api-header"><i class="fas fa-user-friends"></i><h3>REMOVE FRIEND</h3></div>
-                    <div class="input-group">
-                        <label for="bot-list-remove">YOUR BOT LIST</label>
-                        <select id="bot-list-remove" class="input-field">
-                            <option value="" disabled selected>Select your bot...</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="friend-player-id" placeholder="Enter Friend UID..." class="input-field" />
-                    </div>
-                    <div class="input-group">
-                        <button id="remove-friend" class="btn btn-api">removing friend</button>
-                    </div>
-                    <div id="remove-friend-status" class="status-message"></div>
+                <div class="input-group">
+                    <input type="text" id="user-id" placeholder="Enter Friend UID..." class="input-field" />
                 </div>
+                <div class="input-group">
+                    <input type="number" id="friend-days" placeholder="Enter number of days..." class="input-field" min="1" />
+                </div>
+                <div class="input-group">
+                    <button id="adding-friend" class="btn btn-api">add friend</button>
+                </div>
+                <div id="add-friend-status" class="status-message"></div>
             </div>
-        </section>
 
-        <!-- REGISTERED UIDS Section -->
-        <section id="registered-ids" class="tool-section">
-            <h2 class="section-title glitch-text" data-text="Registered UIDs">Registered UIDs</h2>
-            <div id="uids-list"></div>
-        </section>
-
-        <!-- BNGX Section -->
-        <section id="team" class="tool-section">
-            <h2 class="section-title glitch-text" data-text="BNGX">BNGX</h2>
-            <div class="team-grid">
-                <div class="team-card">
-                    <div class="profile-img purple-border">
-                        <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
-                    </div>
-                    <h3 class="dev-name purple-text">BNGX</h3>
-                    <p class="dev-role">CODEX TEAM PANEL</p>
-                    <p class="dev-description">Site creator</p>
-                    <a href="https://t.me/BNGXXXX" target="_blank" class="btn btn-telegram purple">
-                        <i class="fab fa-telegram-plane"></i> Contact via Telegram
-                    </a>
+            <!-- REMOVE FRIEND -->
+            <div class="api-card">
+                <div class="api-header"><i class="fas fa-user-friends"></i><h3>REMOVE FRIEND</h3></div>
+                <div class="input-group">
+                    <label for="bot-list-remove">YOUR BOT LIST</label>
+                    <select id="bot-list-remove" class="input-field">
+                        <option value="" disabled selected>Select your bot...</option>
+                        {% for acc in accounts %}
+                            <option value="{{ acc.id }}">#{{ acc.id }} — {{ acc.uid }} {% if acc.nickname %}({{ acc.nickname }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+                <div class="input-group">
+                    <input type="text" id="friend-player-id" placeholder="Enter Friend UID..." class="input-field" />
+                </div>
+                <div class="input-group">
+                    <button id="remove-friend" class="btn btn-api">removing friend</button>
+                </div>
+                <div id="remove-friend-status" class="status-message"></div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Footer -->
-        <footer class="footer tool-section">
-            <h2 class="section-title glitch-text" data-text="CODEX TEAM">CODEX TEAM</h2>
-            <p>Advanced Hacker Tools & Bots Solutions</p>
-            <p>© 2024 CODEX TEAM | Site created by BNGX</p>
-            <p class="warning">⚠️ For educational and authorized testing purposes only</p>
-        </footer>
-    </div>
+    <!-- REGISTERED UIDS Section -->
+    <section id="registered-ids" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Registered UIDs">Registered UIDs</h2>
+        <div id="uids-list"></div>
+    </section>
 
-    <!-- Matrix Rain Background Canvas -->
-    <canvas id="matrix-canvas"></canvas>
+    <!-- BNGX Section -->
+    <section id="team" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="BNGX">BNGX</h2>
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="profile-img purple-border">
+                    <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
+                </div>
+                <h3 class="dev-name purple-text">BNGX</h3>
+                <p class="dev-role">BNGX PANEL</p>
+                <p class="dev-description">Site creator</p>
+                <a href="https://t.me/BNGXXXX" target="_blank" class="btn btn-telegram purple">
+                    <i class="fab fa-telegram-plane"></i> Contact via Telegram
+                </a>
+            </div>
+        </div>
+    </section>
 
-    <!-- Script -->
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    <script>
-        // Example Matrix Rain Background
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    <!-- Footer -->
+    <footer class="footer tool-section">
+        <h2 class="section-title glitch-text" data-text="BNGX PANEL">BNGX PANEL</h2>
+        <p>Advanced Hacker Tools & Bots Solutions</p>
+        <p>© 2024 BNGX PANEL | Site created by BNGX</p>
+        <p class="warning">⚠️ For educational and authorized testing purposes only</p>
+    </footer>
+</div>
 
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%'.split('');
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
+<!-- Matrix Rain Background Canvas -->
+<canvas id="matrix-canvas"></canvas>
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#0F0';
-            ctx.font = fontSize + 'px monospace';
-            for (let i = 0; i < drops.length; i++) {
-                const text = letters[Math.floor(Math.random() * letters.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
+<!-- Inject server-side data for JS -->
+<script>
+  window.registeredUIDs = {{ registeredUIDs | tojson | safe }};
+  window.nicknames = {{ nicknames | tojson | safe }};
+</script>
+
+<!-- Inline panel JS (you can move this to static/js/panel.js) -->
+<script>
+
+// دالة مساعدة لعرض رسالة الحالة function showStatusMessage(elementId, message, success = true) { const statusDiv = document.getElementById(elementId); if (!statusDiv) return; statusDiv.textContent = message; statusDiv.style.color = success ? "#3b82f6" : "#dc2626"; // أزرق للنجاح، أحمر للخطأ }
+
+// حالة تخزين UIDs لكل حساب let registeredUIDs = window.registeredUIDs || {}; // {account_id: [uid1, uid2, ...]}
+
+// تحديث عرض أسماء الحسابات function updateNicknamesDisplay(nicknames) { if (nicknames) { for (const [key, nickname] of Object.entries(nicknames)) { const el = document.getElementById(nick-${key}); if (el) el.textContent = nickname || "(فارغ)"; } } }
+
+// تحديث عرض UIDs لكل حساب function updateUIDsDisplay() { const uidsListDiv = document.getElementById('uids-list'); if (!uidsListDiv) return; uidsListDiv.innerHTML = '';
+
+for (const [accountId, uids] of Object.entries(registeredUIDs)) {
+    let accountDiv = document.createElement('div');
+    accountDiv.className = 'api-card';
+    accountDiv.style.marginBottom = '12px';
+    accountDiv.innerHTML = `<h3>الحساب ${accountId}:</h3>`;
+    let ul = document.createElement('ul');
+
+    if (!Array.isArray(uids) || uids.length === 0) {
+        let p = document.createElement('p');
+        p.textContent = 'لا يوجد أصدقاء مسجلين';
+        accountDiv.appendChild(p);
+        uidsListDiv.appendChild(accountDiv);
+        continue;
+    }
+
+    uids.forEach(uid => {
+        let li = document.createElement('li');
+        li.textContent = uid;
+        ul.appendChild(li);
+    });
+
+    accountDiv.appendChild(ul);
+    uidsListDiv.appendChild(accountDiv);
+}
+
+}
+
+// --- دالة موحدة لإرسال أي طلب API --- function sendApiRequest(url, body = {}, method = 'POST', statusElementId = '', onSuccess = null) { fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: method.toUpperCase() === 'POST' ? JSON.stringify(body) : undefined }) .then(async res => { const data = await res.json().catch(() => ({})); if (res.status === 200) { if (statusElementId) showStatusMessage(statusElementId, data.message || "تمت العملية بنجاح", true); if (onSuccess) onSuccess(data); } else { if (statusElementId) showStatusMessage(statusElementId, data.message || "فشل العملية", false); } }) .catch(err => { if (statusElementId) showStatusMessage(statusElementId, 'فشل الطلب: ' + err.message, false); }); }
+
+// --- تغيير الاسم مباشرة عند الكتابة أو النقر --- function autoUpdateName() { const botNum = document.getElementById('bot-select').value; const botName = document.getElementById('bot-name').value.trim();
+
+if (!botNum || !botName) {
+    showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب وادخال اسم البوت.', false);
+    return;
+}
+
+sendApiRequest('/api/create_account',
+    { account_id: botNum, nickname: botName },
+    'POST',
+    'bot-name-status',
+    (data) => {
+        if (data.nicknames) {
+            // تحديث القائمة محليًا
+            updateNicknamesDisplay(data.nicknames);
+        }
+    }
+);
+
+}
+
+// Bind events after DOM loaded document.addEventListener('DOMContentLoaded', () => { // Initialize displays from server-provided data if (window.nicknames) updateNicknamesDisplay(window.nicknames); if (window.registeredUIDs) { registeredUIDs = window.registeredUIDs; updateUIDsDisplay(); }
+
+const botNameInput = document.getElementById('bot-name');
+const createBtn = document.getElementById('verify-your-bot');
+if (botNameInput) botNameInput.addEventListener('input', () => { /* don't spam server on every keystroke by default */ });
+if (createBtn) createBtn.addEventListener('click', autoUpdateName);
+
+// Add friend
+const addFriendBtn = document.getElementById('adding-friend');
+if (addFriendBtn) {
+    addFriendBtn.addEventListener('click', () => {
+        const botNum = document.getElementById('bot-list-add').value;
+        const friendUid = document.getElementById('user-id').value.trim();
+        const friendDays = document.getElementById('friend-days').value.trim();
+
+        if (!botNum || !friendUid || !friendDays || isNaN(friendDays) || Number(friendDays) < 1) {
+            showStatusMessage('add-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
+            return;
         }
 
-        setInterval(drawMatrix, 50);
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
-    </script>
+        sendApiRequest('/api/add_friend',
+            { account_id: botNum, friend_uid: friendUid, days: Number(friendDays) },
+            'POST',
+            'add-friend-status',
+            (data) => {
+                if (!registeredUIDs[botNum]) registeredUIDs[botNum] = [];
+                if (!registeredUIDs[botNum].includes(friendUid)) registeredUIDs[botNum].push(friendUid);
+                updateUIDsDisplay();
+            }
+        );
+    });
+}
+
+// Remove friend
+const removeFriendBtn = document.getElementById('remove-friend');
+if (removeFriendBtn) {
+    removeFriendBtn.addEventListener('click', () => {
+        const botNum = document.getElementById('bot-list-remove').value;
+        const friendUid = document.getElementById('friend-player-id').value.trim();
+
+        if (!botNum || !friendUid) {
+            showStatusMessage('remove-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
+            return;
+        }
+
+        sendApiRequest('/api/remove_friend',
+            { account_id: botNum, friend_uid: friendUid },
+            'POST',
+            'remove-friend-status',
+            (data) => {
+                if (registeredUIDs[botNum]) {
+                    registeredUIDs[botNum] = registeredUIDs[botNum].filter(uid => uid !== friendUid);
+                    updateUIDsDisplay();
+                }
+            }
+        );
+    });
+}
+
+}); </script>
+
+<!-- Matrix script -->
+<script>
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%'.split('');
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0F0';
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters[Math.floor(Math.random() * letters.length)];
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    setInterval(drawMatrix, 50);
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+</script>
+
 </body>
 </html>
-                        

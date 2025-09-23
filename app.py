@@ -250,7 +250,7 @@ def add_friend():
     data = request.json or {}
     account_id = data.get('account_id')
     friend_uid = data.get('friend_uid')
-    days = data.get('days', None)
+    time_value = data.get('time', 1)   # عدد الأيام
 
     if not account_id or not friend_uid:
         return jsonify({"success": False, "message": "يجب تحديد الحساب والـ UID لإضافة الصديق"}), 400
@@ -263,21 +263,42 @@ def add_friend():
     password = account['password']
 
     try:
-        token = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json().get('token')
-        if not token: return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
+        token = requests.get(
+            f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}",
+            timeout=5
+        ).json().get('token')
+
+        if not token:
+            return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
         add_url = f"https://add-friend-liard.vercel.app/add_friend?token={token}&uid={friend_uid}"
         add_data = requests.get(add_url, timeout=5).json()
 
         if add_data.get('status') == 'success':
-            # حفظ الـ UID محليًا فقط
+            # حفظ الـ UID محليًا
             global registeredUIDs
             if str(account_id) not in registeredUIDs:
                 registeredUIDs[str(account_id)] = []
             if friend_uid not in registeredUIDs[str(account_id)]:
                 registeredUIDs[str(account_id)].append(friend_uid)
 
-            return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح", "registeredUIDs": registeredUIDs})
+            # 🔹 استدعاء API الوقت (ثابت type=days)
+            time_api_url = (
+                f"https://time-bngx-0c2h.onrender.com/api/add_uid"
+                f"?uid={friend_uid}&time={time_value}&type=days&permanent=false"
+            )
+            time_data = {}
+            try:
+                time_data = requests.get(time_api_url, timeout=5).json()
+            except Exception as e:
+                time_data = {"success": False, "message": f"فشل استدعاء API الوقت: {str(e)}"}
+
+            return jsonify({
+                "success": True,
+                "message": "تمت إضافة الصديق وتحديث الوقت بنجاح",
+                "registeredUIDs": registeredUIDs,
+                "time_api": time_data
+            })
 
         return jsonify({"success": False, "message": add_data.get('message', "فشل إضافة الصديق")})
     except Exception as e:
@@ -300,25 +321,32 @@ def remove_friend():
     if not account:
         return jsonify({"success": False, "message": "الحساب غير موجود"}), 400
 
-    uid = account['uid']
-    password = account['password']
-
     try:
-        token = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json().get('token')
-        if not token: return jsonify({"success": False, "message": "فشل الحصول على التوكن"}), 500
-
-        remove_url = f"https://add-friend-liard.vercel.app/add_friend?token={token}&uid={frienduid}"
+        # 🔹 استدعاء API الوقت فقط
+        remove_url = f"https://time-bngx-0c2h.onrender.com/api/remove_uid?uid={friend_uid}"
         remove_data = requests.get(remove_url, timeout=5).json()
 
-        if remove_data.get('success', False):
-            # إزالة من قائمة registeredUIDs محليًا فقط
+        if remove_data.get("success", False):
+            # إزالة من قائمة registeredUIDs محليًا
             global registeredUIDs
             if str(account_id) in registeredUIDs:
-                registeredUIDs[str(account_id)] = [uid for uid in registeredUIDs[str(account_id)] if uid != friend_uid]
+                registeredUIDs[str(account_id)] = [
+                    uid for uid in registeredUIDs[str(account_id)] if uid != friend_uid
+                ]
 
-            return jsonify({"success": True, "message": "تمت إزالة الصديق بنجاح", "registeredUIDs": registeredUIDs})
+            return jsonify({
+                "success": True,
+                "message": "تمت إزالة الصديق بنجاح",
+                "registeredUIDs": registeredUIDs,
+                "remove_api": remove_data
+            })
         else:
-            return jsonify({"success": False, "message": remove_data.get('message', "فشل إزالة الصديق")})
+            return jsonify({
+                "success": False,
+                "message": remove_data.get("message", "فشل إزالة الصديق"),
+                "remove_api": remove_data
+            })
+
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 

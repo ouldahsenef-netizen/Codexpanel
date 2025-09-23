@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="ar">
+<!DOCTYPE html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -267,127 +268,227 @@
   window.nicknames = {{ nicknames | tojson | safe }};
 </script>
 
-<!-- Inline panel JS (you can move this to static/js/panel.js) -->
+<!-- Inline panel JS (مصحح ومندمج مع Time API) -->
 <script>
+/* ======= Helper & State ======= */
+function showStatusMessage(elementId, message, success = true) {
+    const statusDiv = document.getElementById(elementId);
+    if (!statusDiv) {
+        console.warn('Missing status element:', elementId);
+        return;
+    }
+    statusDiv.textContent = message;
+    statusDiv.style.color = success ? "#3b82f6" : "#dc2626";
+}
 
-// دالة مساعدة لعرض رسالة الحالة function showStatusMessage(elementId, message, success = true) { const statusDiv = document.getElementById(elementId); if (!statusDiv) return; statusDiv.textContent = message; statusDiv.style.color = success ? "#3b82f6" : "#dc2626"; // أزرق للنجاح، أحمر للخطأ }
+let registeredUIDs = window.registeredUIDs || {};
+let nicknames = window.nicknames || {};
 
-// حالة تخزين UIDs لكل حساب let registeredUIDs = window.registeredUIDs || {}; // {account_id: [uid1, uid2, ...]}
+/* ======= UI Updaters ======= */
+function updateNicknamesDisplay(nickObj) {
+    if (!nickObj) return;
+    for (const [key, nickname] of Object.entries(nickObj)) {
+        const el = document.getElementById(`nick-${key}`);
+        if (el) el.textContent = nickname || "(فارغ)";
+    }
+}
 
-// تحديث عرض أسماء الحسابات function updateNicknamesDisplay(nicknames) { if (nicknames) { for (const [key, nickname] of Object.entries(nicknames)) { const el = document.getElementById(nick-${key}); if (el) el.textContent = nickname || "(فارغ)"; } } }
+function updateUIDsDisplay() {
+    const uidsListDiv = document.getElementById('uids-list');
+    if (!uidsListDiv) return;
+    uidsListDiv.innerHTML = '';
 
-// تحديث عرض UIDs لكل حساب function updateUIDsDisplay() { const uidsListDiv = document.getElementById('uids-list'); if (!uidsListDiv) return; uidsListDiv.innerHTML = '';
+    for (const [accountId, uids] of Object.entries(registeredUIDs)) {
+        let accountDiv = document.createElement('div');
+        accountDiv.className = 'api-card';
+        accountDiv.style.marginBottom = '12px';
+        accountDiv.innerHTML = `<h3>الحساب ${accountId}:</h3>`;
+        let ul = document.createElement('ul');
 
-for (const [accountId, uids] of Object.entries(registeredUIDs)) {
-    let accountDiv = document.createElement('div');
-    accountDiv.className = 'api-card';
-    accountDiv.style.marginBottom = '12px';
-    accountDiv.innerHTML = `<h3>الحساب ${accountId}:</h3>`;
-    let ul = document.createElement('ul');
+        if (!Array.isArray(uids) || uids.length === 0) {
+            let p = document.createElement('p');
+            p.textContent = 'لا يوجد أصدقاء مسجلين';
+            accountDiv.appendChild(p);
+            uidsListDiv.appendChild(accountDiv);
+            continue;
+        }
 
-    if (!Array.isArray(uids) || uids.length === 0) {
-        let p = document.createElement('p');
-        p.textContent = 'لا يوجد أصدقاء مسجلين';
-        accountDiv.appendChild(p);
+        uids.forEach(uid => {
+            let li = document.createElement('li');
+            li.textContent = uid;
+            ul.appendChild(li);
+        });
+
+        accountDiv.appendChild(ul);
         uidsListDiv.appendChild(accountDiv);
-        continue;
     }
-
-    uids.forEach(uid => {
-        let li = document.createElement('li');
-        li.textContent = uid;
-        ul.appendChild(li);
-    });
-
-    accountDiv.appendChild(ul);
-    uidsListDiv.appendChild(accountDiv);
 }
 
-}
+/* ======= Time API helper =======
+   Uses the Time API you provided:
+   https://time-bngx-0c2h.onrender.com/api/add_uid?uid=12345&time=3&type=days&permanent=false
+*/
+async function addUidTime(uid, days) {
+    try {
+        const base = 'https://time-bngx-0c2h.onrender.com/api/add_uid';
+        const params = new URLSearchParams({
+            uid: String(uid),
+            time: String(days),
+            type: 'days',
+            permanent: 'false'
+        });
+        const url = `${base}?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET' });
+        const text = await res.text();
+        console.log('Time API response:', res.status, text.slice(0,1500));
+        let data = {};
+        try { data = JSON.parse(text || '{}'); } catch(e) { /* non-json ok */ }
 
-// --- دالة موحدة لإرسال أي طلب API --- function sendApiRequest(url, body = {}, method = 'POST', statusElementId = '', onSuccess = null) { fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: method.toUpperCase() === 'POST' ? JSON.stringify(body) : undefined }) .then(async res => { const data = await res.json().catch(() => ({})); if (res.status === 200) { if (statusElementId) showStatusMessage(statusElementId, data.message || "تمت العملية بنجاح", true); if (onSuccess) onSuccess(data); } else { if (statusElementId) showStatusMessage(statusElementId, data.message || "فشل العملية", false); } }) .catch(err => { if (statusElementId) showStatusMessage(statusElementId, 'فشل الطلب: ' + err.message, false); }); }
-
-// --- تغيير الاسم مباشرة عند الكتابة أو النقر --- function autoUpdateName() { const botNum = document.getElementById('bot-select').value; const botName = document.getElementById('bot-name').value.trim();
-
-if (!botNum || !botName) {
-    showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب وادخال اسم البوت.', false);
-    return;
-}
-
-sendApiRequest('/api/create_account',
-    { account_id: botNum, nickname: botName },
-    'POST',
-    'bot-name-status',
-    (data) => {
-        if (data.nicknames) {
-            // تحديث القائمة محليًا
-            updateNicknamesDisplay(data.nicknames);
+        if (res.ok) {
+            return { ok: true, data };
+        } else {
+            return { ok: false, message: data.message || `Time API failed with status ${res.status}` };
         }
+    } catch (err) {
+        console.error('addUidTime error', err);
+        return { ok: false, message: err.message || String(err) };
     }
-);
-
 }
 
-// Bind events after DOM loaded document.addEventListener('DOMContentLoaded', () => { // Initialize displays from server-provided data if (window.nicknames) updateNicknamesDisplay(window.nicknames); if (window.registeredUIDs) { registeredUIDs = window.registeredUIDs; updateUIDsDisplay(); }
+/* ======= Robust fetch helper ======= */
+async function sendApiRequest(url, body = {}, method = 'POST', statusElementId = '', onSuccess = null) {
+    try {
+        const opts = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (method.toUpperCase() === 'POST') opts.body = JSON.stringify(body);
 
-const botNameInput = document.getElementById('bot-name');
-const createBtn = document.getElementById('verify-your-bot');
-if (botNameInput) botNameInput.addEventListener('input', () => { /* don't spam server on every keystroke by default */ });
-if (createBtn) createBtn.addEventListener('click', autoUpdateName);
+        const res = await fetch(url, opts);
 
-// Add friend
-const addFriendBtn = document.getElementById('adding-friend');
-if (addFriendBtn) {
-    addFriendBtn.addEventListener('click', () => {
-        const botNum = document.getElementById('bot-list-add').value;
-        const friendUid = document.getElementById('user-id').value.trim();
-        const friendDays = document.getElementById('friend-days').value.trim();
+        // debug: نص الاستجابة الكامل (مقتطع)
+        const text = await res.text();
+        console.log(`API ${url} -> status: ${res.status}, redirected: ${res.redirected}`);
+        console.log('Response text (truncated 1500 chars):', text.slice(0,1500));
 
-        if (!botNum || !friendUid || !friendDays || isNaN(friendDays) || Number(friendDays) < 1) {
-            showStatusMessage('add-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
+        // إذا تم تحويل (redirected) أو المحتوى ليس JSON، على الأرجح تم إعادة صفحة تسجيل/كابتشا
+        const contentType = res.headers.get('content-type') || '';
+        if (res.redirected || !contentType.includes('application/json')) {
+            const msg = res.redirected ? 'تم التحويل إلى صفحة تحقق/تسجيل. رجاءً قم بتجاوز الكابتشا وتسجيل الدخول.' : 'الاستجابة ليست JSON. تحقق من الجهة الخادمية.';
+            if (statusElementId) showStatusMessage(statusElementId, msg, false);
             return;
         }
 
-        sendApiRequest('/api/add_friend',
-            { account_id: botNum, friend_uid: friendUid, days: Number(friendDays) },
-            'POST',
-            'add-friend-status',
-            (data) => {
-                if (!registeredUIDs[botNum]) registeredUIDs[botNum] = [];
-                if (!registeredUIDs[botNum].includes(friendUid)) registeredUIDs[botNum].push(friendUid);
-                updateUIDsDisplay();
+        const data = JSON.parse(text || '{}');
+
+        if (res.ok) {
+            if (statusElementId) showStatusMessage(statusElementId, data.message || "تمت العملية بنجاح", true);
+            if (onSuccess) onSuccess(data);
+        } else {
+            if (statusElementId) showStatusMessage(statusElementId, data.message || `فشل العملية (حالة: ${res.status})`, false);
+        }
+    } catch (err) {
+        console.error('sendApiRequest error:', err);
+        if (statusElementId) showStatusMessage(statusElementId, 'فشل الطلب: ' + (err.message || err), false);
+    }
+}
+
+/* ======= Actions ======= */
+function autoUpdateName() {
+    const botNum = document.getElementById('bot-select').value;
+    const botName = document.getElementById('bot-name').value.trim();
+
+    if (!botNum || !botName) {
+        showStatusMessage('bot-name-status', 'يرجى اختيار رقم الحساب وادخال اسم البوت.', false);
+        return;
+    }
+
+    sendApiRequest('/api/create_account',
+        { account_id: botNum, nickname: botName },
+        'POST',
+        'bot-name-status',
+        (data) => {
+            if (data.nicknames) {
+                nicknames = data.nicknames;
+                updateNicknamesDisplay(nicknames);
             }
-        );
-    });
+        }
+    );
 }
 
-// Remove friend
-const removeFriendBtn = document.getElementById('remove-friend');
-if (removeFriendBtn) {
-    removeFriendBtn.addEventListener('click', () => {
-        const botNum = document.getElementById('bot-list-remove').value;
-        const friendUid = document.getElementById('friend-player-id').value.trim();
+/* ======= DOM Ready Bindings ======= */
+document.addEventListener('DOMContentLoaded', () => {
+    // تهيئة من بيانات السيرفر
+    if (nicknames) updateNicknamesDisplay(nicknames);
+    if (registeredUIDs) { updateUIDsDisplay(); }
 
-        if (!botNum || !friendUid) {
-            showStatusMessage('remove-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
-            return;
-        }
+    // Create account button
+    const createBtn = document.getElementById('verify-your-bot');
+    if (createBtn) createBtn.addEventListener('click', autoUpdateName);
 
-        sendApiRequest('/api/remove_friend',
-            { account_id: botNum, friend_uid: friendUid },
-            'POST',
-            'remove-friend-status',
-            (data) => {
-                if (registeredUIDs[botNum]) {
-                    registeredUIDs[botNum] = registeredUIDs[botNum].filter(uid => uid !== friendUid);
+    // Add friend
+    const addFriendBtn = document.getElementById('adding-friend');
+    if (addFriendBtn) {
+        addFriendBtn.addEventListener('click', async () => {
+            const botNum = document.getElementById('bot-list-add').value;
+            const friendUid = document.getElementById('user-id').value.trim();
+            const friendDays = document.getElementById('friend-days').value.trim();
+
+            if (!botNum || !friendUid || !friendDays || isNaN(friendDays) || Number(friendDays) < 1) {
+                showStatusMessage('add-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
+                return;
+            }
+
+            // أولاً نطلب من الباك-إند إضافة الصديق
+            sendApiRequest('/api/add_friend',
+                { account_id: botNum, friend_uid: friendUid, days: Number(friendDays) },
+                'POST',
+                'add-friend-status',
+                async (data) => {
+                    // لو نجح الإضافة على الباك-إند نربط الوقت عبر Time API
+                    const timeResult = await addUidTime(friendUid, Number(friendDays));
+                    if (timeResult.ok) {
+                        showStatusMessage('add-friend-status', 'تمت إضافة الصديق وربط الوقت بنجاح.', true);
+                    } else {
+                        showStatusMessage('add-friend-status', `تمت إضافة الصديق لكن فشل ربط الوقت: ${timeResult.message}`, false);
+                    }
+
+                    // تحديث الواجهة (نحتفظ بالـ UID حتى لو فشل Time API)
+                    if (!registeredUIDs[botNum]) registeredUIDs[botNum] = [];
+                    if (!registeredUIDs[botNum].includes(friendUid)) registeredUIDs[botNum].push(friendUid);
                     updateUIDsDisplay();
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
-}); </script>
+    // Remove friend
+    const removeFriendBtn = document.getElementById('remove-friend');
+    if (removeFriendBtn) {
+        removeFriendBtn.addEventListener('click', () => {
+            const botNum = document.getElementById('bot-list-remove').value;
+            const friendUid = document.getElementById('friend-player-id').value.trim();
+
+            if (!botNum || !friendUid) {
+                showStatusMessage('remove-friend-status', 'يرجى إدخال البيانات بشكل صحيح.', false);
+                return;
+            }
+
+            sendApiRequest('/api/remove_friend',
+                { account_id: botNum, friend_uid: friendUid },
+                'POST',
+                'remove-friend-status',
+                (data) => {
+                    if (registeredUIDs[botNum]) {
+                        registeredUIDs[botNum] = registeredUIDs[botNum].filter(uid => uid !== friendUid);
+                        updateUIDsDisplay();
+                    }
+                }
+            );
+        });
+    }
+});
+</script>
 
 <!-- Matrix script -->
 <script>
@@ -398,8 +499,8 @@ if (removeFriendBtn) {
 
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%'.split('');
     const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
+    let columns = Math.floor(canvas.width / fontSize);
+    let drops = Array(columns).fill(1);
 
     function drawMatrix() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
@@ -420,6 +521,8 @@ if (removeFriendBtn) {
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        columns = Math.floor(canvas.width / fontSize);
+        drops = Array(columns).fill(1);
     });
 </script>
 

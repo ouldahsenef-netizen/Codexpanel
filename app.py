@@ -200,32 +200,35 @@ def create_account():
         return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
 
     account = get_account_by_id(account_id)
-
-    # إذا الحساب غير موجود أضفه للـ DB
     if not account:
-        add_account(account_id, password='')  # يمكن تعديل الباسوورد إذا متوفر
-        account = get_account_by_id(account_id)
+        return jsonify({"success": False, "message": "الحساب غير موجود في قاعدة البيانات"}), 400
 
     uid, password = account['uid'], account['password']
+    if not password:
+        return jsonify({"success": False, "message": "الحساب لا يحتوي على كلمة مرور صحيحة"}), 400
 
     try:
         # الحصول على التوكن
-        token_res = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json()
+        token_res = requests.get(
+            f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}",
+            timeout=5
+        ).json()
         token = token_res.get('token')
         if not token: 
             return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
 
         # تغيير الاسم
-        nick_res = requests.get(f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}", timeout=5).json()
+        nick_res = requests.get(
+            f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}",
+            timeout=5
+        ).json()
         if nick_res.get('success', False):
             update_account_nickname(account_id, nickname)
 
-            # إعادة تحميل كل الحسابات المسمّاة للواجهة
+            # تحديث البيانات للواجهة
             accounts = get_all_accounts()
             named_accounts = [acc for acc in accounts if acc.get('nickname')]
             nicknames = {str(acc['id']): acc['nickname'] for acc in named_accounts}
-
-            # تحديث registeredUIDs
             global registeredUIDs
             registeredUIDs = {str(acc['id']): get_friends_by_account(acc['id']) for acc in named_accounts}
 

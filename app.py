@@ -34,7 +34,7 @@ ddos_tracker = defaultdict(lambda: defaultdict(int))
 suspicious_ips = defaultdict(list)
 lock = threading.Lock()
 
-ADMIN_CREDENTIALS = {"BNGX": "BNGX"}
+ADMIN_CREDENTIALS = {"ahmad": "ahmad_admin"}
 
 # --- Helper Functions ---
 def get_client_ip():
@@ -173,14 +173,22 @@ for acc in get_all_accounts():
     registeredUIDs[str(acc['id'])] = get_friends_by_account(acc['id'])
 
 # --- Main Routes ---
+# --- Main Routes ---
 @app.route('/')
 @protection_required
 @admin_required
 def index():
     accounts = get_all_accounts()
-    nicknames = {str(acc['id']): acc['nickname'] for acc in accounts}
-    return render_template('index.html', nicknames=nicknames, registeredUIDs=registeredUIDs)
-
+    print('Accounts:', accounts)  # طباعة للتأكد في اللوج
+    nicknamed_accounts = [acc for acc in accounts if acc.get('nickname')]
+    nicknames = {str(acc['id']): acc.get('nickname') for acc in nicknamed_accounts}
+    registeredUIDs = {str(acc['id']): get_friends_by_account(acc['id']) for acc in nicknamed_accounts}
+    return render_template(
+        'index.html',
+        accounts=accounts,
+        nicknames=nicknames,
+        registeredUIDs=registeredUIDs
+    )
 # --- Create / Update Account Name ---
 @app.route('/api/create_account', methods=['POST'])
 @protection_required
@@ -188,27 +196,53 @@ def index():
 def create_account():
     data = request.json or {}
     account_id, nickname = data.get('account_id'), data.get('nickname')
-    if not account_id or not nickname: return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
+    if not account_id or not nickname: 
+        return jsonify({"success": False, "message": "يجب تحديد الحساب والاسم الجديد"}), 400
+
     account = get_account_by_id(account_id)
-    if not account: return jsonify({"success": False, "message": "الحساب المختار غير صحيح"}), 400
+
+    # إذا الحساب غير موجود أضفه للـ DB
+    if not account:
+        add_account(account_id, password='')  # يمكن تعديل الباسوورد إذا متوفر
+        account = get_account_by_id(account_id)
 
     uid, password = account['uid'], account['password']
-    try:
-        token_res = requests.get(f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json()
-        token = token_res.get('token')
-        if not token: return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
 
+    try:
+        # الحصول على التوكن
+        token_res = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json()
+        token = token_res.get('token')
+        if not token: 
+            return jsonify({"success": False, "message": "فشل في الحصول على التوكن من API"}), 500
+
+        # تغيير الاسم
         nick_res = requests.get(f"https://change-name-gray.vercel.app/lvl_up/api/nickname?jwt_token={token}&nickname={nickname}", timeout=5).json()
         if nick_res.get('success', False):
             update_account_nickname(account_id, nickname)
-            return jsonify({"success": True, "message": "تم تغيير الاسم بنجاح", "nicknames": {str(account_id): nickname}})
-        return jsonify({"success": False, "message": nick_res.get('message', "تم اضافة الحساب ")})
+
+            # إعادة تحميل كل الحسابات المسمّاة للواجهة
+            accounts = get_all_accounts()
+            named_accounts = [acc for acc in accounts if acc.get('nickname')]
+            nicknames = {str(acc['id']): acc['nickname'] for acc in named_accounts}
+
+            # تحديث registeredUIDs
+            global registeredUIDs
+            registeredUIDs = {str(acc['id']): get_friends_by_account(acc['id']) for acc in named_accounts}
+
+            return jsonify({
+                "success": True,
+                "message": "تم إنشاء الحساب وتغيير الاسم بنجاح",
+                "accounts": named_accounts,
+                "nicknames": nicknames,
+                "registeredUIDs": registeredUIDs
+            })
+
+        return jsonify({"success": False, "message": nick_res.get('message', "فشل تغيير الاسم")})
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 
-# --- Add Friend ---
-ADD_URL_TEMPLATE = "https://add-friend-weld.vercel.app/add_friend?token={token}&uid={uid}"
 
+# --- Add Friend ---
 @app.route('/api/add_friend', methods=['POST'])
 @protection_required
 @admin_required
@@ -229,45 +263,28 @@ def add_friend():
     password = account['password']
 
     try:
-        # الحصول على توكن
-        oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        oauth_response = requests.get(oauth_url, timeout=5)
-        oauth_response.raise_for_status()
-        token = oauth_response.json().get('token')
-        if not token:
-            return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
+        token = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json().get('token')
+        if not token: return jsonify({"success": False, "message": "فشل في الحصول على التوكن"}), 500
 
-        # إرسال طلب إضافة صديق
-        add_url = f"https://add-friend-weld.vercel.app/add_friend?token={token}&uid={friend_uid}"
-        add_response = requests.get(add_url, timeout=5)
-        add_response.raise_for_status()
-        add_data = add_response.json()
+        add_url = f"https://add-friend-liard.vercel.app/add_friend?token={token}&uid={friend_uid}"
+        add_data = requests.get(add_url, timeout=5).json()
 
         if add_data.get('status') == 'success':
-            # حفظ الـ UID في قاعدة البيانات
-            add_account(friend_uid, password='')  # يمكنك تعديل الباسوورد إذا متوفر
+            # حفظ الـ UID محليًا فقط
+            global registeredUIDs
+            if str(account_id) not in registeredUIDs:
+                registeredUIDs[str(account_id)] = []
+            if friend_uid not in registeredUIDs[str(account_id)]:
+                registeredUIDs[str(account_id)].append(friend_uid)
 
-            # إذا تم تحديد الأيام، إرسالها للـ API الخارجي
-            if days is not None:
-                try:
-                    api_url = f"https://time-bngx-0c2h.onrender.com/api/add_uid?uid={friend_uid}&time={days}&type=days&permanent=false"
-                    external_resp = requests.get(api_url, timeout=5)
-                    external_resp.raise_for_status()
-                    external_data = external_resp.json()
-                    if external_data.get('success') or external_data.get('message'):
-                        return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح وتم إرسال عدد الأيام بنجاح."})
-                    else:
-                        return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح ولكن حدث خطأ في إرسال عدد الأيام."})
-                except Exception as e:
-                    return jsonify({"success": True, "message": f"تمت إضافة الصديق بنجاح لكن حدث خطأ أثناء إرسال عدد الأيام: {str(e)}"})
-            else:
-                return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح"})
-        else:
-            error_msg = add_data.get('message', "فشل في إضافة الصديق")
-            return jsonify({"success": False, "message": error_msg})
+            return jsonify({"success": True, "message": "تمت إضافة الصديق بنجاح", "registeredUIDs": registeredUIDs})
+
+        return jsonify({"success": False, "message": add_data.get('message', "فشل إضافة الصديق")})
     except Exception as e:
         return jsonify({"success": False, "message": f"خطأ داخلي: {str(e)}"}), 500
 
+
+# --- Remove Friend ---
 @app.route('/api/remove_friend', methods=['POST'])
 @protection_required
 @admin_required
@@ -287,20 +304,19 @@ def remove_friend():
     password = account['password']
 
     try:
-        oauth_url = f"https://jwt-silk-xi.vercel.app/api/oauth_guest?uid={uid}&password={password}"
-        token = requests.get(oauth_url, timeout=5).json().get('token')
-        if not token:
-            return jsonify({"success": False, "message": "فشل الحصول على التوكن"}), 500
+        token = requests.get(f"https://jwt-three-weld.vercel.app/api/oauth_guest?uid={uid}&password={password}", timeout=5).json().get('token')
+        if not token: return jsonify({"success": False, "message": "فشل الحصول على التوكن"}), 500
 
-        remove_url = f"https://remove-pi-azure.vercel.app/remove_friend?token={token}&uid={friend_uid}"
+        remove_url = f"https://add-friend-liard.vercel.app/add_friend?token={token}&uid={frienduid}"
         remove_data = requests.get(remove_url, timeout=5).json()
 
         if remove_data.get('success', False):
-            # إزالة من قاعدة البيانات
-            conn = get_db_connection()
-            conn.run('DELETE FROM accounts WHERE uid = :uid;', uid=int(friend_uid))
-            conn.close()
-            return jsonify({"success": True, "message": "تمت إزالة الصديق من DB بنجاح"})
+            # إزالة من قائمة registeredUIDs محليًا فقط
+            global registeredUIDs
+            if str(account_id) in registeredUIDs:
+                registeredUIDs[str(account_id)] = [uid for uid in registeredUIDs[str(account_id)] if uid != friend_uid]
+
+            return jsonify({"success": True, "message": "تمت إزالة الصديق بنجاح", "registeredUIDs": registeredUIDs})
         else:
             return jsonify({"success": False, "message": remove_data.get('message', "فشل إزالة الصديق")})
     except Exception as e:

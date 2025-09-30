@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BNGX PANEL - Advanced Hacker Tools</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background: #0d0d0d;
+            color: #00ff99;
+            font-family: 'Fira Code', monospace;
+            overflow-x: hidden;
+        }
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #00ff99;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .section-title::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            bottom: -5px;
+            left: 0;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            border-radius: 2px;
+        }
+        .tool-section {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.7);
+            margin: 20px 0;
+            border-radius: 12px;
+        }
+        .input-group { margin-bottom: 15px; }
+        .input-field {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #00ff99;
+            background: #111;
+            color: #00ff99;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(90deg,#ff00ff,#00ffff);
+            color: #000;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .status-message {
+            color: #ff5555;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 10px;
+            position: relative;
+            z-index: 1; /* فوق الكانفاس */
+        }
+        .team-grid { display:flex; gap:20px; flex-wrap:wrap; }
+        .team-card {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #00ff99;
+        }
+        .profile-img img {
+            width:120px; height:120px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        footer { text-align: center; margin-top: 20px; }
+        /* Glitch text effects */
+        .glitch-text {
+            position: relative;
+            color: #00ff99;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0; top: 0;
+            opacity: 0.8;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #f0f;
+            animation: glitchTop 2s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #0ff;
+            animation: glitchBottom 2s infinite linear alternate-reverse;
+        }
+        @keyframes glitchTop {
+            0% { clip: rect(0,9999px,0,0); }
+            5% { clip: rect(0,9999px,5px,0); }
+            10% { clip: rect(0,9999px,0,0); }
+            15% { clip: rect(0,9999px,5px,0); }
+            20% { clip: rect(0,9999px,0,0); }
+            25% { clip: rect(0,9999px,5px,0); }
+            30% { clip: rect(0,9999px,0,0); }
+            100% { clip: rect(0,9999px,0,0); }
+        }
+        @keyframes glitchBottom {
+            0% { clip: rect(5px,9999px,9999px,0); }
+            15% { clip: rect(0,9999px,9999px,0); }
+            25% { clip: rect(0,9999px,9999px,0); }
+            30% { clip: rect(5px,9999px,9999px,0); }
+            100% { clip: rect(5px,9999px,9999px,0); }
+        }
+
+        /* Styles for results display */
+        .result-card {
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(0,255,153,0.15);
+            border-radius: 8px;
+            padding: 12px;
+            color: #caffd6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: 10px;
+        }
+        .result-key {
+            color: #00ffc1;
+            font-weight: 700;
+        }
+        .json-raw {
+            background: rgba(0,0,0,0.6);
+            border: 1px dashed rgba(0,255,153,0.08);
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #b7f7d8;
+            max-height: 260px;
+            overflow: auto;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Canvas -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="container">
+        <!-- Add Likes Section -->
+        <section id="bio-tool" class="tool-section">
+            <h2 class="section-title glitch-text" data-text="Add Likes">Add Likes</h2>
+            <div class="tool-container">
+                <div class="input-group">
+                    <label for="like-id-input">ادخل الـ ID</label>
+                    <input type="text" id="like-id-input" placeholder="Enter ID..." class="input-field" />
+                </div>
+                <div class="input-group">
+                    <button id="add-likes-btn" class="btn btn-verify">add likes</button>
+                </div>
+                <div id="likes-status" class="status-message"></div>
+            </div>
+        </section>
+
+        <!-- THIS SECTION SHOWS THE RESULT OF add_likes -->
+        <section id="add-likes-result" class="tool-section">
+            <h2 class="section-title glitch-text" data-text="نتيجة Add Likes">نتيجة Add Likes</h2>
+            <div id="uids-list" class="result-card">
+                هنا ستعرض نتيجة طلب add likes بعد التنفيذ.
+            </div>
+        </section>
+
+        <!-- BNGX -->
+        <section id="team" class="tool-section">
+            <h2 class="section-title glitch-text" data-text="BNGX">BNGX</h2>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="profile-img purple-border">
+                        <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
+                    </div>
+                    <h3 class="dev-name purple-text">BNGX</h3>
+                    <p class="dev-role">BNGX PANEL</p>
+                    <p class="dev-description">Site creator</p>
+                    <a href="https://t.me/BNGXXXX" target="_blank" class="btn btn-telegram purple">
+                        <i class="fab fa-telegram-plane"></i> Contact via Telegram
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer tool-section">
+            <h2 class="section-title glitch-text" data-text="BNGX PANEL">BNGX PANEL</h2>
+            <p>Advanced Hacker Tools & Bots Solutions</p>
+            <p>© 2024 BNGX PANEL | Site created by BNGX</p>
+            <p class="warning">⚠️ For educational and authorized testing purposes only</p>
+        </footer>
+    </div>
+
+<!-- بيانات من السيرفر للـ JS -->
+<script>
+  window.registeredUIDs = {{ registeredUIDs | tojson | safe }};
+  window.nicknames = {{ nicknames | tojson | safe }};
+</script>
+
+<!-- سكربت الجافا الأساسي مع تعديل ليعرض النتيجة -->
+<script>
+function showStatusMessage(elementId, message, success = true) {
+    const statusDiv = document.getElementById(elementId);
+    if (!statusDiv) {
+        console.warn('Missing status element:', elementId);
+        return;
+    }
+    statusDiv.textContent = message;
+    statusDiv.style.color = success ? "#3b82f6" : "#dc2626";
+}
+
+let registeredUIDs = window.registeredUIDs || {};
+let nicknames = window.nicknames || {};
+
+function updateNicknamesDisplay(nickObj) {
+    if (!nickObj) return;
+    for (const [key, nickname] of Object.entries(nickObj)) {
+        const el = document.getElementById(`nick-${key}`);
+        if (el) el.textContent = nickname || "(فارغ)";
+    }
+}
+
+/* نحافظ على الدالة العامة لإرسال الطلبات لكن نسمح بتمرير onSuccess */
+async function sendApiRequest(url, body = {}, method = 'POST', statusElementId = '', onSuccess = null) {
+    try {
+        const opts = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (method.toUpperCase() === 'POST') opts.body = JSON.stringify(body);
+
+        const res = await fetch(url, opts);
+        const contentType = res.headers.get('content-type') || '';
+        const text = await res.text();
+
+        console.log(`API ${url} -> status: ${res.status}, redirected: ${res.redirected}`);
+        console.log('Response text (truncated):', text.slice(0,1500));
+
+        if (res.redirected || !contentType.includes('application/json')) {
+            const msg = res.redirected ? 'تم التحويل إلى صفحة تحقق/تسجيل. رجاءً قم بتجاوز الكابتشا وتسجيل الدخول.' : 'الاستجابة ليست JSON. تحقق من الجهة الخادمية.';
+            if (statusElementId) showStatusMessage(statusElementId, msg, false);
+            // عرض نص الاستجابة الخام أيضاً في النتيجة
+            if (onSuccess) onSuccess({ rawText: text, status: res.status, redirected: res.redirected });
+            return;
+        }
+
+        const data = JSON.parse(text || '{}');
+
+        if (res.ok) {
+            if (statusElementId) showStatusMessage(statusElementId, data.message || "تمت العملية بنجاح", true);
+            if (onSuccess) onSuccess(data);
+        } else {
+            if (statusElementId) showStatusMessage(statusElementId, data.message || `فشل العملية (حالة: ${res.status})`, false);
+            if (onSuccess) onSuccess(data);
+        }
+    } catch (err) {
+        console.error('sendApiRequest error:', err);
+        if (statusElementId) showStatusMessage(statusElementId, 'فشل الطلب: ' + (err.message || err), false);
+        if (onSuccess) onSuccess({ error: true, message: err.message || String(err) });
+    }
+}
+
+/* دالة تعرض نتيجة add_likes بشكل منسق داخل الـ #uids-list */
+function displayAddLikesResult(data) {
+    const out = document.getElementById('uids-list');
+    if (!out) return;
+
+    // تنظيف المحتوى القديم
+    out.innerHTML = '';
+
+    // حالات معروفة: خطأ محلي، تحويل، JSON مفيد
+    if (data === null || data === undefined) {
+        out.textContent = 'لم تتلقَ أي استجابة من الخادم.';
+        return;
+    }
+
+    // إذا كانت الاستجابة تحتوي على خطأ من catch
+    if (data.error) {
+        const p = document.createElement('div');
+        p.innerHTML = `<div class="result-key">خطأ:</div><div>${escapeHtml(data.message || 'Unknown error')}</div>`;
+        out.appendChild(p);
+        return;
+    }
+
+    // حالة استجابة غير JSON (rawText)
+    if (data.rawText) {
+        const p = document.createElement('div');
+        p.innerHTML = `<div class="result-key">نص الاستجابة الخام (non-JSON):</div><div>${escapeHtml(data.rawText)}</div>`;
+        out.appendChild(p);
+        return;
+    }
+
+    // إذا جاء JSON مع حقول مهمة - نحاول عرض الحقول الأكثر ارتباطاً
+    const summary = document.createElement('div');
+    summary.className = 'result-summary';
+
+    // أوصاف سريعة إن وُجِدت
+    const rows = [];
+
+    if (typeof data.success !== 'undefined') rows.push(['success', String(data.success)]);
+    if (data.message) rows.push(['message', String(data.message)]);
+    // بعض APIS ترجع stats.daily_limited_reached أو stats.success
+    if (data.stats && typeof data.stats.daily_limited_reached !== 'undefined') rows.push(['daily_limited_reached', String(data.stats.daily_limited_reached)]);
+    if (data.stats && typeof data.stats.success !== 'undefined') rows.push(['stats.success', String(data.stats.success)]);
+    if (data.result) rows.push(['result', String(data.result)]);
+    if (data.id) rows.push(['id', String(data.id)]);
+    if (data.uid) rows.push(['uid', String(data.uid)]);
+    if (data.code) rows.push(['code', String(data.code)]);
+    if (data.status) rows.push(['status', String(data.status)]);
+
+    if (rows.length === 0) {
+        // لا حقول موجزة مألوفة -> نظهر رسالة سريعة
+        const p = document.createElement('div');
+        p.innerHTML = `<div class="result-key">استجابة الخادم:</div><div>لم يتم العثور على حقول موجزة معروفة — راجع JSON الكامل بالأسفل.</div>`;
+        summary.appendChild(p);
+    } else {
+        rows.forEach(([k, v]) => {
+            const el = document.createElement('div');
+            el.innerHTML = `<span class="result-key">${escapeHtml(k)}:</span> ${escapeHtml(v)}`;
+            summary.appendChild(el);
+        });
+    }
+
+    out.appendChild(summary);
+
+    // عرض JSON كامل قابل للنسخ
+    const raw = document.createElement('div');
+    raw.className = 'json-raw';
+    try {
+        raw.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+        raw.textContent = String(data);
+    }
+    out.appendChild(raw);
+}
+
+/* زر add likes ينادي الـ API ثم يعرض النتيجة */
+document.addEventListener('DOMContentLoaded', () => {
+    if (nicknames) updateNicknamesDisplay(nicknames);
+
+    const addLikesBtn = document.getElementById('add-likes-btn');
+    if (addLikesBtn) {
+        addLikesBtn.addEventListener('click', () => {
+            const likeId = document.getElementById('like-id-input').value.trim();
+            if (!likeId) {
+                showStatusMessage('likes-status', 'يرجى إدخال الـ ID.', false);
+                return;
+            }
+            // مسح نتيجة سابقة قبل الطلب
+            const out = document.getElementById('uids-list');
+            if (out) out.innerHTML = 'جارٍ ارسال الطلب...';
+
+            // استدعاء الدالة مع تمرير displayAddLikesResult كـ onSuccess لتحديث العرض فوراً
+            sendApiRequest('/api/add_likes', { id: likeId }, 'POST', 'likes-status', displayAddLikesResult);
+        });
+    }
+});
+
+/* مساعدة هروب HTML عند الإدراج */
+function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+
+<!-- سكربت تأثير Matrix Rain (محسّن كما طلبت) -->
+<script>
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+let fontSize = 16;
+let columns;
+let drops;
+
+function resizeCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    columns = Math.floor(width / fontSize);
+    drops = Array(columns).fill(1);
+}
+
+function drawMatrix() {
+    // خلفية شفافة مع قليل من السواد لترك الأثر
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.font = fontSize + 'px monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*';
+        const text = charset.charAt(Math.floor(Math.random() * charset.length));
+
+        // تدرج اللون الأخضر لكل حرف
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#b6ffda'); // فاتح
+        gradient.addColorStop(0.5, '#00ff9a');
+        gradient.addColorStop(1, '#07b04b'); // غامق
+        ctx.fillStyle = gradient;
+
+        // لمعان للرأس (head)
+        if (Math.random() > 0.995) {
+            ctx.fillStyle = '#ecffd6';
+            ctx.shadowColor = '#ecffd6';
+            ctx.shadowBlur = 10;
+        } else {
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        // إعادة التكرار
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+resizeCanvas();
+setInterval(drawMatrix, 50);
+</script>
+</body>
+</html>

@@ -176,7 +176,7 @@ def add_likes():
         if not uid:
             return jsonify({"error": "missing id"}), 400
 
-        r = requests.get(f"https://likes-khaki.vercel.app/send_like?player_id={uid}", timeout=15)
+        r = requests.get(f"https://likes-khaki.vercel.app/send_like?player_id={uid}", timeout=75)
         r.raise_for_status()
         return jsonify(r.json())
     except Exception as e:

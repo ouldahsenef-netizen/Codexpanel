@@ -10,4 +10,5 @@ flask_sqlalchemy
 flask_login
 psycopg2-binary
 pg8000==1.31.5
+flask-cors
 

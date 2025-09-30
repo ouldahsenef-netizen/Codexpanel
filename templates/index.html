@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BNGX PANEL - Advanced Hacker Tools</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background: #0d0d0d;
+            color: #00ff99;
+            font-family: 'Fira Code', monospace;
+            overflow-x: hidden;
+        }
+        #matrix-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; display: block; }
+        .section-title { font-size: 28px; font-weight: 600; color: #00ff99; margin-bottom: 20px; position: relative; display: inline-block; }
+        .section-title::after { content: ""; position: absolute; width: 100%; height: 4px; bottom: -5px; left: 0; background: linear-gradient(90deg, #ff00ff, #00ffff); border-radius: 2px; }
+        .tool-section { padding: 30px 20px; background: rgba(0,0,0,0.7); margin: 20px 0; border-radius: 12px; }
+        .input-group { margin-bottom: 15px; }
+        .input-field { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #00ff99; background: #111; color: #00ff99; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; background: linear-gradient(90deg,#ff00ff,#00ffff); color: #000; cursor: pointer; font-weight: 600; }
+        .status-message { color: #ff5555; font-weight: 500; margin-top: 5px; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 10px; }
+        .result-card { background: rgba(0,0,0,0.55); border: 1px solid rgba(0,255,153,0.15); border-radius: 8px; padding: 12px; color: #caffd6; margin-top: 10px; }
+        .result-key { color: #00ffc1; font-weight: 700; }
+    </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="container">
+    <!-- Add Likes Section -->
+    <section id="bio-tool" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Add Likes">Add Likes</h2>
+        <div class="tool-container">
+            <div class="input-group">
+                <label for="like-id-input">ادخل الـ ID</label>
+                <input type="text" id="like-id-input" placeholder="Enter ID..." class="input-field" />
+            </div>
+            <div class="input-group">
+                <button id="add-likes-btn" class="btn">add likes</button>
+            </div>
+            <div id="likes-status" class="status-message"></div>
+        </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="add-likes-result" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="نتيجة Add Likes">نتيجة Add Likes</h2>
+        <div id="uids-list" class="result-card">
+            هنا ستعرض نتيجة طلب add likes بعد التنفيذ.
+        </div>
+    </section>
+</div>
+
+<script>
+// زر Add Likes
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("add-likes-btn").addEventListener("click", async () => {
+        const uid = document.getElementById("like-id-input").value.trim();
+        const statusDiv = document.getElementById("likes-status");
+        const outDiv = document.getElementById("uids-list");
+
+        if (!uid) {
+            statusDiv.textContent = "⚠️ يرجى إدخال ID صالح.";
+            return;
+        }
+
+        statusDiv.textContent = "⏳ جارٍ إرسال الطلب...";
+        outDiv.innerHTML = "";
+
+        try {
+            const res = await fetch(`https://likes-khaki.vercel.app/send_like?player_id=${uid}`);
+            const data = await res.json();
+
+            statusDiv.textContent = "✅ تمت العملية بنجاح!";
+
+            // عرض النتيجة بشكل منسق
+            outDiv.innerHTML = `
+                <div><span class="result-key">👤 الاسم:</span> ${data.player_name}</div>
+                <div><span class="result-key">🆔 ID:</span> ${data.player_id}</div>
+                <div><span class="result-key">👍 اللايكات قبل:</span> ${data.likes_before}</div>
+                <div><span class="result-key">✨ اللايكات المضافة:</span> ${data.likes_added}</div>
+                <div><span class="result-key">🎯 اللايكات بعد:</span> ${data.likes_after}</div>
+                <div><span class="result-key">⏱️ المدة حتى المسموح القادم:</span> ${data.seconds_until_next_allowed} ثانية</div>
+            `;
+        } catch (err) {
+            console.error(err);
+            statusDiv.textContent = "❌ فشل في جلب البيانات من API.";
+            outDiv.textContent = err.message || "خطأ غير معروف";
+        }
+    });
+});
+</script>
+
+<!-- Matrix Rain -->
+<script>
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+let fontSize = 16;
+let columns;
+let drops;
+
+function resizeCanvas() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    columns = Math.floor(width / fontSize);
+    drops = Array(columns).fill(1);
+}
+function drawMatrix() {
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(0,0,width,height);
+    ctx.font = fontSize + 'px monospace';
+    for (let i=0; i<drops.length; i++) {
+        const text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789".charAt(Math.random()*35);
+        ctx.fillStyle = "#00ff99";
+        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+        if (drops[i]*fontSize > height && Math.random()>0.975) drops[i]=0;
+        drops[i]++;
+    }
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+setInterval(drawMatrix,50);
+</script>
+</body>
+</html>

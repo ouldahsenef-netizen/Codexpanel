@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>إرسال لايكات</title>
+    <style>
+        body {
+            background-color: #e6f0ff; /* أزرق فاتح بدل الزهري */
+            color: #0040a0; /* أزرق غامق */
+            font-family: 'Cairo', sans-serif;
+            text-align: center;
+            padding-top: 80px;
+        }
+        h1 {
+            color: #0066ff;
+        }
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #007bff;
+            width: 260px;
+        }
+        button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            margin-top: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .region-button {
+            background-color: #007bff;
+            margin: 5px;
+            padding: 8px 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+        }
+        .region-button.active {
+            background-color: #004080;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #003380;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 أرسل لايكاتك الآن</h1>
+
+    <!-- زرين اختيار السيرفر -->
+    <div>
+        <button class="region-button active" id="ME" onclick="selectRegion('ME')">ME</button>
+        <button class="region-button" id="IND" onclick="selectRegion('IND')">IND</button>
+    </div>
+
+    <!-- مربع إدخال الـ ID -->
+    <input type="text" id="uid" placeholder="أدخل ID اللاعب">
+
+    <!-- زر الإرسال -->
+    <button onclick="sendLike()">إرسال 💙</button>
+
+    <div id="result"></div>
+
+    <script>
+        let selectedRegion = 'ME'; // افتراضي
+
+        function selectRegion(region) {
+            selectedRegion = region;
+            // تغيير اللون للزر النشط
+            document.getElementById('ME').classList.remove('active');
+            document.getElementById('IND').classList.remove('active');
+            document.getElementById(region).classList.add('active');
+        }
+
+        async function sendLike() {
+            const uid = document.getElementById("uid").value.trim();
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerText = "⏳ جاري الإرسال...";
+            const res = await fetch("/api/add_likes", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({id: uid, region: selectedRegion})
+            });
+            const data = await res.json();
+            if (data.success) {
+                resultDiv.innerText = `✅ تم إرسال ${data.data.likes_added || 0} لايك إلى ${data.data.player_name || uid} على سيرفر ${selectedRegion}`;
+            } else {
+                resultDiv.innerText = `❌ ${data.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,60 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Likes Sender</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إرسال لايكس</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f8ff; /* لون الخلفية أزرق فاتح */
-            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        input, select, button {
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        select, input {
+            width: 100%;
             padding: 10px;
-            margin: 5px 0;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
             font-size: 16px;
+            background-color: #007bff; /* أزرق */
+            color: #fff; /* النص أبيض */
+        }
+        input::placeholder {
+            color: #e0e0e0;
         }
         button {
-            background-color: #007BFF; /* الأزرق */
-            color: white;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff; /* أزرق */
             border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
             cursor: pointer;
         }
         button:hover {
             background-color: #0056b3;
         }
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 250px;
+            overflow-y: auto;
+            background: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h2>إرسال لايكس</h2>
-    <form id="likeForm">
-        <label>اختر الرجيون:</label><br>
-        <select id="region" name="region">
-            <option value="ME">ME</option>
-            <option value="IND">IND</option>
-        </select><br>
-        <label>ادخل الـ ID:</label><br>
-        <input type="text" id="playerId" name="id" placeholder="Player ID"><br>
-        <button type="submit">إرسال</button>
-    </form>
+    <div class="container">
+        <h2>إرسال لايكس</h2>
 
-    <div id="result"></div>
+        <!-- خانة اختيار الريجيون -->
+        <select id="region">
+            <option value="ME" selected>ME</option>
+            <option value="IND">IND</option>
+        </select>
+
+        <!-- حقل إدخال الـ UID -->
+        <input type="text" id="playerId" placeholder="أدخل الـ ID هنا">
+
+        <!-- زر الإرسال -->
+        <button onclick="sendLikes()">Send Likes</button>
+
+        <!-- عرض النتيجة -->
+        <div class="result" id="result"></div>
+    </div>
 
     <script>
-        document.getElementById('likeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const id = document.getElementById('playerId').value;
+        async function sendLikes() {
+            const playerId = document.getElementById('playerId').value.trim();
             const region = document.getElementById('region').value;
 
-            const response = await fetch('/api/add_likes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, region })
-            });
+            if (!playerId) {
+                alert("الرجاء إدخال الـ ID.");
+                return;
+            }
 
-            const data = await response.json();
-            document.getElementById('result').innerText = JSON.stringify(data, null, 2);
-        });
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = "جاري الإرسال...";
+
+            try {
+                const response = await fetch('/api/add_likes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: playerId, region: region })
+                });
+
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = "حدث خطأ أثناء الاتصال بالخادم.";
+                console.error(error);
+            }
+        }
     </script>
 </body>
 </html>

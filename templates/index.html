@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -54,15 +55,33 @@
             background: #111;
             color: #00bfff;
         }
+
+        /* === الأزرار الموحدة === */
         .btn {
+            box-sizing: border-box;
             padding: 8px 16px;
-            border: none;
             border-radius: 6px;
             background: linear-gradient(90deg,#00bfff,#1e90ff);
             color: #000;
+            border: 1px solid rgba(0,191,255,0.2);
             cursor: pointer;
             font-weight: 600;
+            transition: filter .1s ease, box-shadow .1s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
         }
+        .btn:hover {
+            filter: brightness(0.95);
+        }
+        .btn:active {
+            filter: brightness(0.7);
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.4);
+        }
+        .btn.pressed {
+            filter: brightness(0.65);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.45);
+            color: #fff;
+        }
+
         .status-message {
             color: #ff5555;
             font-weight: 500;
@@ -124,19 +143,17 @@
             word-break: break-word;
             margin-top: 10px;
         }
-        .result-key { color: #00ffff; font-weight: 700; }
-        .json-raw {
-            background: rgba(0,0,0,0.6);
-            border: 1px dashed rgba(0,191,255,0.08);
-            padding: 8px;
-            margin-top: 8px;
-            font-size: 13px;
-            color: #b7f7d8;
-            max-height: 260px;
-            overflow: auto;
-        }
 
         .server-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        /* أزرار السيرفر */
+        .server-buttons .server-btn.active {
+            filter: brightness(0.78);
+            box-shadow: inset 0 -3px 8px rgba(0,0,0,0.25), 0 6px 18px rgba(6,90,160,0.45);
+            border: 1px solid rgba(0,120,200,0.9);
+            color: #fff;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -147,8 +164,8 @@
         <h2 class="section-title glitch-text" data-text="Add Likes">Add Likes</h2>
         <div class="tool-container">
             <div class="server-buttons">
-                <button class="btn" onclick="selectServer('ME')">ME</button>
-                <button class="btn" onclick="selectServer('IND')">IND</button>
+                <button class="btn server-btn active" data-region="ME" onclick="selectServer('ME')">ME</button>
+                <button class="btn server-btn" data-region="IND" onclick="selectServer('IND')">IND</button>
             </div>
             <div class="input-group">
                 <label for="like-id-input">Enter ID</label>
@@ -163,9 +180,7 @@
 
     <section id="add-likes-result" class="tool-section">
         <h2 class="section-title glitch-text" data-text="Add Likes Result">Add Likes Result</h2>
-        <div id="uids-list" class="result-card">
-            Result will appear here.
-        </div>
+        <div id="uids-list" class="result-card">Result will appear here.</div>
     </section>
 
     <section id="team" class="tool-section">
@@ -194,46 +209,81 @@
 </div>
 
 <script>
+/* ===========================
+   ⚠️ API KEY (مخفي داخل الكود)
+   استبدل قيمة API_KEY هنا إذا أردت.
+   ملاحظة: هذا المفتاح ظاهري في الكود الأمامي — أي شخص يمكنه رؤيته عبر DevTools.
+   =========================== */
+const API_KEY = 'BNGX_API';
+
 let selectedServer = 'ME';
-function selectServer(region) { selectedServer = region; }
-
-function showStatusMessage(elementId, message, success = true) {
-    const statusDiv = document.getElementById(elementId);
-    if (!statusDiv) return;
-    statusDiv.textContent = message;
-    statusDiv.style.color = success ? "#00bfff" : "#ff5555";
+function selectServer(region) {
+    selectedServer = region;
+    document.querySelectorAll('.server-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.region === region);
+    });
 }
 
-async function sendApiRequest(url, body = {}, method='POST', statusElementId='', onSuccess=null){
+function showStatusMessage(id, msg, ok=true){
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.textContent=msg;
+    el.style.color=ok?"#00bfff":"#ff5555";
+}
+
+/* sendApiRequest: يرسل المفتاح في الهيدر X-API-KEY */
+async function sendApiRequest(url, body={}, method='POST', statusId='', onSuccess=null){
     try{
-        const opts={method, headers:{'Content-Type':'application/json'}};
-        if(method.toUpperCase()==='POST') opts.body=JSON.stringify(body);
-        const res=await fetch(url, opts);
+        const opts = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': API_KEY  // <-- المفتاح يرسل هنا
+            }
+        };
+        if(method === 'POST') opts.body = JSON.stringify(body);
+
+        const res = await fetch(url, opts);
         const text = await res.text();
-        let data={};
-        try{ data = JSON.parse(text); } catch(e){ data={ rawText:text }; }
-        if(res.ok) { if(statusElementId) showStatusMessage(statusElementId, "Request sent successfully.", true); if(onSuccess) onSuccess(data); }
-        else { if(statusElementId) showStatusMessage(statusElementId, "Request failed.", false); if(onSuccess) onSuccess(data); }
-    }catch(err){ if(statusElementId) showStatusMessage(statusElementId, 'Request error: '+err, false); if(onSuccess) onSuccess({error:true,message:String(err)});}
+
+        // نعرض النص كما هو (الخادم يعيد رسائل نصية جميلة)
+        let parsed;
+        try {
+            parsed = JSON.parse(text);
+        } catch (e) {
+            parsed = { rawText: text };
+        }
+
+        if(onSuccess) onSuccess(parsed.rawText ? parsed.rawText : parsed);
+
+        showStatusMessage(statusId, res.ok ? "✅ Request sent successfully." : "❌ Request failed.", res.ok);
+    }catch(e){
+        showStatusMessage(statusId,'Error: '+e,false);
+        if(onSuccess) onSuccess({ error: true, message: String(e) });
+    }
 }
 
-function displayAddLikesResult(data){
+function displayAddLikesResult(d){
     const out=document.getElementById('uids-list');
-    if(!out) return;
-    out.innerHTML='';
-    const pre=document.createElement('pre'); pre.textContent=JSON.stringify(data,null,2); out.appendChild(pre);
+    // إذا الخادم أعاد نص منسق، نظهره كما هو؛ وإلا نظهر JSON منسق
+    if(typeof d === 'string'){
+        // تبديل السطور لعرض جميل
+        out.textContent = d.trim();
+    } else {
+        out.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+    }
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-    const addLikesBtn=document.getElementById('add-likes-btn');
-    if(addLikesBtn){
-        addLikesBtn.addEventListener('click',()=>{
-            const likeId=document.getElementById('like-id-input').value.trim();
-            if(!likeId){ showStatusMessage('likes-status','Please enter an ID.',false); return; }
-            const out=document.getElementById('uids-list'); if(out) out.innerHTML='Sending request...';
-            sendApiRequest('/api/add_likes',{ id: likeId, region: selectedServer },'POST','likes-status',displayAddLikesResult);
-        });
-    }
+    const btn=document.getElementById('add-likes-btn');
+    btn.addEventListener('click',async()=>{
+        const id=document.getElementById('like-id-input').value.trim();
+        if(!id){showStatusMessage('likes-status','Please enter an ID.',false);return;}
+        document.getElementById('uids-list').textContent='⏳ Sending request...';
+        btn.classList.add('pressed');
+        await sendApiRequest('/api/add_likes', { id, region: selectedServer }, 'POST', 'likes-status', displayAddLikesResult);
+        setTimeout(()=>btn.classList.remove('pressed'),200);
+    });
 });
 </script>
 
@@ -241,7 +291,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 const canvas=document.getElementById('matrix-canvas');
 const ctx=canvas.getContext('2d');
 let width,height,fontSize=16,columns,drops;
-function resizeCanvas(){ width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height;columns=Math.floor(width/fontSize);drops=Array(columns).fill(1);}
+function resizeCanvas(){width=window.innerWidth;height=window.innerHeight;canvas.width=width;canvas.height=height;columns=Math.floor(width/fontSize);drops=Array(columns).fill(1);}
 function drawMatrix(){
     ctx.fillStyle='rgba(0,0,0,0.08)';
     ctx.fillRect(0,0,width,height);
@@ -254,9 +304,9 @@ function drawMatrix(){
         gradient.addColorStop(0.5,'#00ff9a');
         gradient.addColorStop(1,'#07b04b');
         ctx.fillStyle=gradient;
-        if(Math.random()>0.995){ ctx.fillStyle='#ecffd6'; ctx.shadowColor='#ecffd6'; ctx.shadowBlur=10; } else { ctx.shadowBlur=0; }
+        if(Math.random()>0.995){ctx.fillStyle='#ecffd6';ctx.shadowColor='#ecffd6';ctx.shadowBlur=10;}else{ctx.shadowBlur=0;}
         ctx.fillText(text,i*fontSize,drops[i]*fontSize);
-        if(drops[i]*fontSize>height && Math.random()>0.975){ drops[i]=0; }
+        if(drops[i]*fontSize>height&&Math.random()>0.975){drops[i]=0;}
         drops[i]++;
     }
 }
@@ -265,4 +315,4 @@ resizeCanvas();
 setInterval(drawMatrix,50);
 </script>
 </body>
-</html>
+    </html>

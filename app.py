@@ -4,38 +4,32 @@ from requests.exceptions import RequestException, Timeout
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)  # يسمح بالطلبات من الواجهة إذا احتجت (اختياري)
+CORS(app)  # يسمح بالطلبات من أي مكان (ضروري للنشر على Vercel)
 
-# 🔵 تم تعديل رابط الـ API فقط
+# رابط API الجديد مع مفتاحك
 LIKES_API_TEMPLATE = "https://like-all-server.vercel.app/like?uid={uid}&server_name={region}&key=BNGXX"
 
 @app.route('/')
 def index():
-    # تأكد أن لديك index.html داخل مجلد templates
     return render_template('index.html')
 
 @app.route('/api/add_likes', methods=['POST'])
 def add_likes():
-    """
-    تتوقع JSON body: {"id": "<player_id>"}
-    تعيد JSON يحتوي على ملخص النتيجة + JSON الخام من الـ API إن وُجد.
-    """
     try:
         data = request.get_json(force=True, silent=True)
-        if not data or 'id' not in data:
-            return jsonify({"success": False, "message": "مطلوب: حقل 'id' في جسم الطلب."}), 400
+        if not data or 'id' not in data or 'region' not in data:
+            return jsonify({"success": False, "message": "مطلوب: الحقول 'id' و'region'"}), 400
 
         player_id = str(data['id']).strip()
-        if player_id == "":
+        region = str(data['region']).upper().strip()
+
+        if not player_id:
             return jsonify({"success": False, "message": "قيمة 'id' فارغة."}), 400
+        if region not in ["ME", "IND"]:
+            return jsonify({"success": False, "message": "قيمة 'region' غير صحيحة."}), 400
 
-        # 🟦 إضافة region ثابت مؤقتًا لتعمل كما في الكود الأصلي (يمكنك تغييره من الواجهة)
-        region = data.get("region", "ME").upper()
-
-        # بناء رابط الـ API الخارجي
         api_url = LIKES_API_TEMPLATE.format(uid=player_id, region=region)
 
-        # نطلب الـ API الخارجي مباشرة (نحدد timeout للسلامة)
         try:
             resp = requests.get(api_url, timeout=10)
         except Timeout:
@@ -43,11 +37,9 @@ def add_likes():
         except RequestException as e:
             return jsonify({"success": False, "message": f"خطأ في الاتصال بالـ API الخارجي: {str(e)}"}), 502
 
-        # حاول تحويل الرد إلى JSON
         try:
             payload = resp.json()
         except ValueError:
-            # إذا لم يكن JSON، نعيد النص الخام
             raw_text = resp.text
             return jsonify({
                 "success": False,
@@ -56,8 +48,6 @@ def add_likes():
                 "raw": raw_text
             }), 502
 
-        # الآن لدينا JSON؛ نُخرج الحقول المهمة التي ذكرتها
-        # (نتعامل مع المفاتيح الموجودة أو نضع قيمة افتراضية)
         result = {
             "likes_added": payload.get("likes_added"),
             "likes_after": payload.get("likes_after"),
@@ -65,11 +55,9 @@ def add_likes():
             "player_id": payload.get("player_id"),
             "player_name": payload.get("player_name"),
             "seconds_until_next_allowed": payload.get("seconds_until_next_allowed"),
-            # نحتفظ أيضاً بالـ JSON الكامل كحقل raw_response
             "raw_response": payload
         }
 
-        # تحديد حالة النجاح بطريقة بسيطة: إن نجا الطلب (200) ووجدنا likes_added على الأقل
         success_flag = resp.ok and (result["likes_added"] is not None)
 
         return jsonify({
@@ -79,7 +67,6 @@ def add_likes():
         }), (200 if success_flag else 207)
 
     except Exception as e:
-        # خطأ غير متوقع
         return jsonify({"success": False, "message": "حدث خطأ في الخادم: " + str(e)}), 500
 
 if __name__ == '__main__':

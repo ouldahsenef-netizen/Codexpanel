@@ -1,101 +1,60 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>إرسال لايكات</title>
+    <title>Likes Sender</title>
     <style>
         body {
-            background-color: #e6f0ff; /* أزرق فاتح بدل الزهري */
-            color: #0040a0; /* أزرق غامق */
-            font-family: 'Cairo', sans-serif;
-            text-align: center;
-            padding-top: 80px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff; /* لون الخلفية أزرق فاتح */
+            padding: 20px;
         }
-        h1 {
-            color: #0066ff;
-        }
-        input {
+        input, select, button {
             padding: 10px;
-            border-radius: 5px;
-            border: 2px solid #007bff;
-            width: 260px;
+            margin: 5px 0;
+            font-size: 16px;
         }
         button {
-            background-color: #007bff;
-            border: none;
+            background-color: #007BFF; /* الأزرق */
             color: white;
-            padding: 10px 25px;
-            margin-top: 15px;
-            border-radius: 5px;
+            border: none;
             cursor: pointer;
-            font-weight: bold;
         }
         button:hover {
             background-color: #0056b3;
         }
-        .region-button {
-            background-color: #007bff;
-            margin: 5px;
-            padding: 8px 20px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            border: none;
-        }
-        .region-button.active {
-            background-color: #004080;
-        }
-        #result {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #003380;
-        }
     </style>
 </head>
 <body>
-    <h1>🚀 أرسل لايكاتك الآن</h1>
-
-    <!-- زرين اختيار السيرفر -->
-    <div>
-        <button class="region-button active" id="ME" onclick="selectRegion('ME')">ME</button>
-        <button class="region-button" id="IND" onclick="selectRegion('IND')">IND</button>
-    </div>
-
-    <!-- مربع إدخال الـ ID -->
-    <input type="text" id="uid" placeholder="أدخل ID اللاعب">
-
-    <!-- زر الإرسال -->
-    <button onclick="sendLike()">إرسال 💙</button>
+    <h2>إرسال لايكس</h2>
+    <form id="likeForm">
+        <label>اختر الرجيون:</label><br>
+        <select id="region" name="region">
+            <option value="ME">ME</option>
+            <option value="IND">IND</option>
+        </select><br>
+        <label>ادخل الـ ID:</label><br>
+        <input type="text" id="playerId" name="id" placeholder="Player ID"><br>
+        <button type="submit">إرسال</button>
+    </form>
 
     <div id="result"></div>
 
     <script>
-        let selectedRegion = 'ME'; // افتراضي
+        document.getElementById('likeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('playerId').value;
+            const region = document.getElementById('region').value;
 
-        function selectRegion(region) {
-            selectedRegion = region;
-            // تغيير اللون للزر النشط
-            document.getElementById('ME').classList.remove('active');
-            document.getElementById('IND').classList.remove('active');
-            document.getElementById(region).classList.add('active');
-        }
-
-        async function sendLike() {
-            const uid = document.getElementById("uid").value.trim();
-            const resultDiv = document.getElementById("result");
-            resultDiv.innerText = "⏳ جاري الإرسال...";
-            const res = await fetch("/api/add_likes", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({id: uid, region: selectedRegion})
+            const response = await fetch('/api/add_likes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, region })
             });
-            const data = await res.json();
-            if (data.success) {
-                resultDiv.innerText = `✅ تم إرسال ${data.data.likes_added || 0} لايك إلى ${data.data.player_name || uid} على سيرفر ${selectedRegion}`;
-            } else {
-                resultDiv.innerText = `❌ ${data.message}`;
-            }
-        }
+
+            const data = await response.json();
+            document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+        });
     </script>
 </body>
 </html>

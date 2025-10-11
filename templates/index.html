@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BNGX PANEL - Advanced Hacker Tools</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background: transparent;
+            color: #00bfff;
+            font-family: 'Fira Code', monospace;
+            overflow-x: hidden;
+            direction: rtl;
+        }
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            display: block;
+        }
+        .section-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #00bfff;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .section-title::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            bottom: -5px;
+            left: 0;
+            background: linear-gradient(90deg, #00bfff, #1e90ff);
+            border-radius: 2px;
+        }
+        .tool-section {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.7);
+            margin: 20px 0;
+            border-radius: 12px;
+        }
+        .input-group { margin-bottom: 15px; }
+        .input-field {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #00bfff;
+            background: #111;
+            color: #00bfff;
+        }
+
+        /* === الأزرار الموحدة === */
+        .btn {
+            box-sizing: border-box;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: linear-gradient(90deg,#00bfff,#1e90ff);
+            color: #000;
+            border: 1px solid rgba(0,191,255,0.2);
+            cursor: pointer;
+            font-weight: 600;
+            transition: filter .1s ease, box-shadow .1s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+        }
+        .btn:hover {
+            filter: brightness(0.95);
+        }
+        .btn:active {
+            filter: brightness(0.7);
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.4);
+        }
+        .btn.pressed {
+            filter: brightness(0.65);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.45);
+            color: #fff;
+        }
+
+        .status-message {
+            color: #ff5555;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .team-grid { display:flex; gap:20px; flex-wrap:wrap; justify-content: center; }
+        .team-card {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #00bfff;
+            text-align: center;
+        }
+        .profile-img img {
+            width:120px; height:120px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        footer { text-align: center; margin-top: 20px; }
+        .glitch-text {
+            position: relative;
+            color: #00bfff;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0; top: 0;
+            opacity: 0.8;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #1e90ff;
+            animation: glitchTop 2s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            animation: glitchBottom 2s infinite linear alternate-reverse;
+        }
+        @keyframes glitchTop { 0% { clip: rect(0,9999px,0,0); } 5% { clip: rect(0,9999px,5px,0); } 10% { clip: rect(0,9999px,0,0); } 15% { clip: rect(0,9999px,5px,0); } 20% { clip: rect(0,9999px,0,0); } 25% { clip: rect(0,9999px,5px,0); } 30% { clip: rect(0,9999px,0,0); } 100% { clip: rect(0,9999px,0,0); } }
+        @keyframes glitchBottom { 0% { clip: rect(5px,9999px,9999px,0); } 15% { clip: rect(0,9999px,9999px,0); } 25% { clip: rect(0,9999px,9999px,0); } 30% { clip: rect(5px,9999px,9999px,0); } 100% { clip: rect(5px,9999px,9999px,0); } }
+
+        .result-card {
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(0,191,255,0.15);
+            border-radius: 8px;
+            padding: 12px;
+            color: #caffd6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-top: 10px;
+        }
+
+        .server-buttons { display: flex; gap: 10px; margin-bottom: 15px; justify-content: flex-start; }
+
+        /* أزرار السيرفر */
+        .server-buttons .server-btn.active {
+            filter: brightness(0.78);
+            box-shadow: inset 0 -3px 8px rgba(0,0,0,0.25), 0 6px 18px rgba(6,90,160,0.45);
+            border: 1px solid rgba(0,120,200,0.9);
+            color: #fff;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="container">
+    <!-- ===== ADD LIKES ===== -->
+    <section id="bio-tool" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Add Likes">Add Likes</h2>
+        <div class="tool-container">
+            <div class="server-buttons">
+                <button class="btn server-btn active" data-region="ME" onclick="selectServer('ME','like')">ME</button>
+                <button class="btn server-btn" data-region="IND" onclick="selectServer('IND','like')">IND</button>
+            </div>
+            <div class="input-group">
+                <label for="like-id-input">Enter ID</label>
+                <input type="text" id="like-id-input" placeholder="Enter ID..." class="input-field" />
+            </div>
+            <div class="input-group">
+                <button id="add-likes-btn" class="btn">Add Likes</button>
+            </div>
+            <div id="likes-status" class="status-message"></div>
+        </div>
+    </section>
+
+    <section id="add-likes-result" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Add Likes Result">Add Likes Result</h2>
+        <div id="uids-list" class="result-card">Result will appear here.</div>
+    </section>
+
+    <!-- ===== ADD 500 VISIT ===== -->
+    <section id="visit-tool" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Add 500 Visit">Add 500 Visit</h2>
+        <div class="tool-container">
+            <div class="server-buttons">
+                <button class="btn server-btn active" data-region="ME" onclick="selectServer('ME','visit')">ME</button>
+                <button class="btn server-btn" data-region="IND" onclick="selectServer('IND','visit')">IND</button>
+            </div>
+            <div class="input-group">
+                <label for="visit-id-input">Enter ID</label>
+                <input type="text" id="visit-id-input" placeholder="Enter ID..." class="input-field" />
+            </div>
+            <div class="input-group">
+                <button id="add-visit-btn" class="btn">Add 500 Visit</button>
+            </div>
+            <div id="visit-status" class="status-message"></div>
+        </div>
+    </section>
+
+    <section id="add-visit-result" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="Add 500 Visit Result">Add 500 Visit Result</h2>
+        <div id="visit-uids-list" class="result-card">Result will appear here.</div>
+    </section>
+
+    <!-- ===== TEAM ===== -->
+    <section id="team" class="tool-section">
+        <h2 class="section-title glitch-text" data-text="BNGX">BNGX</h2>
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="profile-img">
+                    <img src="{{ url_for('static', filename='images/E915864E-4C38-4EFA-96E0-E13ECA51DFEA_1755810001562.jpeg') }}" alt="BNGX Profile" />
+                </div>
+                <h3 class="dev-name">BNGX</h3>
+                <p class="dev-role">BNGX PANEL</p>
+                <p class="dev-description">Site creator</p>
+                <a href="https://t.me/BNGXXXX" target="_blank" class="btn">
+                    <i class="fab fa-telegram-plane"></i> Contact via Telegram
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer tool-section">
+        <h2 class="section-title glitch-text" data-text="BNGX PANEL">BNGX PANEL</h2>
+        <p>Advanced Hacker Tools & Bots Solutions</p>
+        <p>© 2024 BNGX PANEL | Site created by BNGX</p>
+        <p class="warning">⚠️ For educational and authorized testing purposes only</p>
+    </footer>
+</div>
+
+<script>
+const API_KEY = 'BNGX_API';
+
+let selectedServerLike = 'ME';
+let selectedServerVisit = 'ME';
+
+function selectServer(region, type){
+    if(type === 'like'){
+        selectedServerLike = region;
+        document.querySelectorAll('#bio-tool .server-btn').forEach(btn=>{
+            btn.classList.toggle('active', btn.dataset.region === region);
+        });
+    } else if(type === 'visit'){
+        selectedServerVisit = region;
+        document.querySelectorAll('#visit-tool .server-btn').forEach(btn=>{
+            btn.classList.toggle('active', btn.dataset.region === region);
+        });
+    }
+}
+
+function showStatusMessage(id, msg, ok=true){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = msg;
+    el.style.color = ok ? "#00bfff" : "#ff5555";
+}
+
+async function sendApiRequest(url, body={}, method='POST', statusId='', onSuccess=null){
+    try{
+        const opts = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-KEY': API_KEY
+            }
+        };
+        if(method === 'POST') opts.body = JSON.stringify(body);
+
+        const res = await fetch(url, opts);
+        const text = await res.text();
+
+        let parsed;
+        try { parsed = JSON.parse(text); } catch(e) { parsed = { rawText: text }; }
+
+        if(onSuccess) onSuccess(parsed.rawText ? parsed.rawText : parsed);
+        showStatusMessage(statusId, res.ok ? "✅ Request sent successfully." : "❌ Request failed.", res.ok);
+    }catch(e){
+        showStatusMessage(statusId, 'Error: ' + e, false);
+        if(onSuccess) onSuccess({ error: true, message: String(e) });
+    }
+}
+
+function displayAddLikesResult(d){
+    const out = document.getElementById('uids-list');
+    if(typeof d === 'string'){ out.textContent = d.trim(); }
+    else { out.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>'; }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    // Add Likes
+    const btnLikes = document.getElementById('add-likes-btn');
+    btnLikes.addEventListener('click', async ()=>{
+        const id = document.getElementById('like-id-input').value.trim();
+        if(!id){ showStatusMessage('likes-status','Please enter an ID.', false); return; }
+        document.getElementById('uids-list').textContent = '⏳ Sending request...';
+        btnLikes.classList.add('pressed');
+        await sendApiRequest('/api/add_likes', { id, region: selectedServerLike }, 'POST', 'likes-status', displayAddLikesResult);
+        setTimeout(()=>btnLikes.classList.remove('pressed'), 200);
+    });
+
+    // Add 500 Visit
+    const btnVisit = document.getElementById('add-visit-btn');
+    btnVisit.addEventListener('click', async ()=>{
+        const id = document.getElementById('visit-id-input').value.trim();
+        if(!id){ showStatusMessage('visit-status','Please enter an ID.', false); return; }
+        document.getElementById('visit-uids-list').textContent = '⏳ Sending request...';
+        btnVisit.classList.add('pressed');
+        await sendApiRequest('/api/add_visit', { id, region: selectedServerVisit }, 'POST', 'visit-status', (d)=>{
+            const out = document.getElementById('visit-uids-list');
+            if(typeof d === 'string'){ out.textContent = d.trim(); } else { out.innerHTML = '<pre>' + JSON.stringify(d, null, 2) + '</pre>'; }
+        });
+        setTimeout(()=>btnVisit.classList.remove('pressed'), 200);
+    });
+});
+</script>
+
+<script>
+/* Matrix rain effect - المصحح */
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext && canvas.getContext('2d') ? canvas.getContext('2d') : null;
+let width, height, fontSize = 16, columns, drops;
+
+function resizeCanvas(){
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+    columns = Math.floor(width / fontSize) || 1;
+    drops = new Array(columns).fill(1);
+}
+function drawMatrix(){
+    if(!ctx) return;
+    // شاشة شبه شفافة لتأثير الذوبان
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.font = fontSize + 'px monospace';
+
+    for(let i = 0; i < drops.length; i++){
+        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*';
+        const text = charset.charAt(Math.floor(Math.random() * charset.length));
+
+        // إنشاء تدرج لوني من الأخضر إلى الفاتح
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#b6ffda');
+        gradient.addColorStop(0.5, '#00ff9a');
+        gradient.addColorStop(1, '#07b04b');
+
+        ctx.fillStyle = gradient;
+
+        // وميض متناثر من وقت لآخر
+        if(Math.random() > 0.995){
+            ctx.fillStyle = '#ecffd6';
+            ctx.shadowColor = '#ecffd6';
+            ctx.shadowBlur = 10;
+        } else {
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if(drops[i] * fontSize > height && Math.random() > 0.975){
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+setInterval(drawMatrix, 50);
+</script>
+</body>
+</html>

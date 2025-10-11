@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,13 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+        /* Page direction set to left-to-right */
         html, body {
             margin: 0; padding: 0; height: 100%;
             background: transparent;
             color: #00bfff;
             font-family: 'Fira Code', monospace;
             overflow-x: hidden;
-            direction: rtl;
+            direction: ltr;
         }
         #matrix-canvas {
             position: fixed;
@@ -30,6 +31,7 @@
             position: relative;
             display: inline-block;
             margin-bottom: 20px;
+            text-align: left;
         }
         .section-title::after {
             content: "";
@@ -47,7 +49,7 @@
             margin: 20px 0;
             border-radius: 12px;
         }
-        .input-group { margin-bottom: 15px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
         .input-field {
             width: 100%;
             padding: 8px 10px;
@@ -57,7 +59,7 @@
             color: #00bfff;
         }
 
-        /* === الأزرار الموحدة === */
+        /* Unified buttons */
         .btn {
             box-sizing: border-box;
             padding: 8px 16px;
@@ -87,6 +89,7 @@
             color: #ff5555;
             font-weight: 500;
             margin-top: 5px;
+            text-align: left;
         }
         .container {
             max-width: 1100px;
@@ -94,6 +97,7 @@
             padding: 10px;
             position: relative;
             z-index: 1;
+            direction: ltr;
         }
         .team-grid { display:flex; gap:20px; flex-wrap:wrap; justify-content: center; }
         .team-card {
@@ -114,6 +118,7 @@
             color: #00bfff;
             font-size: 32px;
             font-weight: 700;
+            text-align: left;
         }
         .glitch-text::before,
         .glitch-text::after {
@@ -144,11 +149,13 @@
             white-space: pre-wrap;
             word-break: break-word;
             margin-top: 10px;
+            text-align: left;
         }
 
+        /* Server buttons aligned to the left for LTR */
         .server-buttons { display: flex; gap: 10px; margin-bottom: 15px; justify-content: flex-start; }
 
-        /* أزرار السيرفر */
+        /* active server button style */
         .server-buttons .server-btn.active {
             filter: brightness(0.78);
             box-shadow: inset 0 -3px 8px rgba(0,0,0,0.25), 0 6px 18px rgba(6,90,160,0.45);
@@ -323,7 +330,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 <script>
-/* Matrix rain effect - المصحح */
+/* Matrix rain effect - corrected */
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext && canvas.getContext('2d') ? canvas.getContext('2d') : null;
 let width, height, fontSize = 16, columns, drops;
@@ -338,7 +345,7 @@ function resizeCanvas(){
 }
 function drawMatrix(){
     if(!ctx) return;
-    // شاشة شبه شفافة لتأثير الذوبان
+    // translucent fade to create trailing effect
     ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
     ctx.fillRect(0, 0, width, height);
     ctx.font = fontSize + 'px monospace';
@@ -347,7 +354,7 @@ function drawMatrix(){
         const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*';
         const text = charset.charAt(Math.floor(Math.random() * charset.length));
 
-        // إنشاء تدرج لوني من الأخضر إلى الفاتح
+        // gradient from light to darker green
         const gradient = ctx.createLinearGradient(0, 0, 0, height);
         gradient.addColorStop(0, '#b6ffda');
         gradient.addColorStop(0.5, '#00ff9a');
@@ -355,7 +362,7 @@ function drawMatrix(){
 
         ctx.fillStyle = gradient;
 
-        // وميض متناثر من وقت لآخر
+        // occasional bright flash
         if(Math.random() > 0.995){
             ctx.fillStyle = '#ecffd6';
             ctx.shadowColor = '#ecffd6';

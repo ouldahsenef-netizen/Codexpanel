@@ -212,8 +212,8 @@ function displayAddLikesResult(d){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
-    // Maintenance Likes صيانة
-    const btnLikes = document.getElementById('add-likes-btn');
+    // Add Likes
+    const btnLikes = document.getElementById('Maintenance-Likes-صيانة-btn');
     btnLikes.addEventListener('click', async ()=>{
         const id = document.getElementById('like-id-input').value.trim();
         if(!id){ showStatusMessage('likes-status','Please enter an ID.', false); return; }

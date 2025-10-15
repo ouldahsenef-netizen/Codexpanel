@@ -213,7 +213,7 @@ function displayAddLikesResult(d){
 
 document.addEventListener('DOMContentLoaded', ()=>{
     // Add Likes
-    const btnLikes = document.getElementById('Add-Llikes-btn');
+    const btnLikes = document.getElementById('add-likes-btn');
     btnLikes.addEventListener('click', async ()=>{
         const id = document.getElementById('like-id-input').value.trim();
         if(!id){ showStatusMessage('likes-status','Please enter an ID.', false); return; }

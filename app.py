@@ -12,7 +12,7 @@ CORS(app)
 API_KEY = "BNGX_API"
 
 # رابط الـ API الخارجي
-LIKES_API_TEMPLATE = "https://like-all-server.vercel.app/like?uid={uid}&server_name={region}&key=BNGXX"
+LIKES_API_TEMPLATE = "http://85.215.131.70:14062/like?uid={uid}&server_name={region}&key=diamondxpress"
 VISIT_API_TEMPLATE = "https://visit-ivory.vercel.app/send_visit?player_id={uid}&server={region}"
 
 # ------------------ Helper: إرجاع رسالة نصية ------------------

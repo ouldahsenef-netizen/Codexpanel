@@ -90,21 +90,30 @@ def add_likes():
         except ValueError:
             return text_response("❌ Invalid response from like server. Expected JSON format.", 502)
 
-        normalized = normalize_payload(payload)
+        # ✅ قراءة القيم الجديدة من الرد
+        player_name = payload.get("PlayerNickname", "Unknown")
+        likes_before = payload.get("LikesbeforeCommand", "N/A")
+        likes_after = payload.get("LikesafterCommand", "N/A")
+        likes_added = payload.get("LikesGivenByAPI", 0)
+        remains = payload.get("remains", "N/A")
+        message = payload.get("message", "No message provided.")
+        status = payload.get("status", "N/A")
 
         result_text = f"""
 {'💖'*3} LIKE OPERATION RESULT {'💖'*3}
 
-👤 Player: {normalized["player_name"]}
+👤 Player: {player_name}
 🆔 UID: {player_id}
-💌 Likes Added: {normalized["likes_added"]}
-💖 Before Command: {normalized["before"]}
-💖 After Command: {normalized["after"]}
-📊 Status: {normalized["status"]}
-💡 Remaining: {normalized["remains"]}
+💌 Likes Added: {likes_added}
+💖 Before Command: {likes_before}
+💖 After Command: {likes_after}
+📜 Message: {message}
+📊 Status: {status}
+💡 Remaining: {remains}
 ⏱️ Execution Time: {round(time.time() - start_time, 3)} sec
 📅 Executed At: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
 """
+
         return text_response(result_text, 200)
 
     except Exception as e:

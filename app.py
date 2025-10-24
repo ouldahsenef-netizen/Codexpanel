@@ -210,6 +210,8 @@ HTML_TEMPLATE = '''
             --warning: #fdcb6e;
             --error: #d63031;
         }
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9346359398684204"
+     crossorigin="anonymous"></script>
         * {
             margin: 0;
             padding: 0;

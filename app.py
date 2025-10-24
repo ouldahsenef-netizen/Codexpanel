@@ -196,6 +196,9 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9346359398684204"
+     crossorigin="anonymous"></script>
+
     <title>موقع إضافة العناصر الفاخر</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
@@ -210,8 +213,6 @@ HTML_TEMPLATE = '''
             --warning: #fdcb6e;
             --error: #d63031;
         }
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9346359398684204"
-     crossorigin="anonymous"></script>
         * {
             margin: 0;
             padding: 0;

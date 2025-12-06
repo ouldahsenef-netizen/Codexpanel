@@ -169,7 +169,7 @@ HTML_TEMPLATE = '''
                         <i class="fas fa-terminal mr-2"></i>SYSTEM ACCESS
                     </h1>
                     <p class="text-gray-400 text-sm">
-                        4REAL FUCK ALL TEAMS
+                        BNGX IS HERE
                     </p>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -358,7 +358,7 @@ HTML_TEMPLATE = '''
                     <div class="flex items-center space-x-4">
                         <div class="flex items-center space-x-2">
                             <i class="fas fa-server text-gray-500"></i>
-                            <span class="text-sm text-gray-400 code-font">mr3skr@system:~</span>
+                            <span class="text-sm text-gray-400 code-font">BNGX@system:~</span>
                         </div>
                     </div>
                     <div class="text-xs text-gray-500">
